@@ -25,7 +25,7 @@ app.post('/apiCallAi', async (req, res)=>{
   }
 
   if(method === 'seeAllPlaces'){
-    const api = new ApiComplentionLocations({method, city, country, input, checkbox, isLocalPlaces, scaleVisit});
+    const api = new ApiComplentionLocations({city, country, input, checkbox, isLocalPlaces, scaleVisit});
     const result = await api.getAllPlacesAboutLocations();
     rezFinal = result;
   }
