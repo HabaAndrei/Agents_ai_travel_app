@@ -12,9 +12,10 @@ app.use(express.json());
 
 app.post('/apiCallAi', async (req, res)=>{
 
+  const {method} = req.query;
   let rezFinal = '';
 
-  const {from, to, city, country, method, locations, input, checkbox, isLocalPlaces,
+  const {from, to, city, country, locations, input, checkbox, isLocalPlaces,
     scaleVisit, histoyConv, information} = req.body;
 
   if(method === 'createProgram'){

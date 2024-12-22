@@ -22,8 +22,7 @@ const db = getFirestore(app_firebase);
 class ApiComplentionLocations {
 
   constructor(objectWithVariables){
-    const {method, city, country, input, checkbox, isLocalPlaces, scaleVisit} = objectWithVariables;
-    this.method = method;
+    const {city, country, input, checkbox, isLocalPlaces, scaleVisit} = objectWithVariables;
     this.city = city;
     this.country = country;
     this.input = input;
