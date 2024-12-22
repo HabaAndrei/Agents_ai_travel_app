@@ -1,0 +1,13 @@
+{
+  "dependencies": {
+    "@googlemaps/addressvalidation": "^2.4.0",
+    "address-validator": "^0.2.3",
+    "axios": "^1.7.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.0",
+    "firebase": "^10.14.1",
+    "nodemailer": "^6.9.15",
+    "openai": "^4.61.0"
+  }
+}
