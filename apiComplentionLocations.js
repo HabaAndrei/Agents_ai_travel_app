@@ -146,7 +146,7 @@ class ApiComplentionLocations {
           1. If the location is not known, return this in JSON format: {response: {}}.
           2. The packages should contain information only about that specific location, without including data from other locations, even if they are nearby, or in the same building.
           (example: In Burj Khalifa, Dubai, I want the packages to include only Burj Khalifa activities, not the Dubai Mall or the fountain spectacle." )
-          3. The packages should complement each other, as in this example: << Garden visit, Lake visit, Lake plus Garden visit >>
+          3. The packages should complement each other, as in this example: << 1. Garden visit 2. Lake visit 3. Lake plus Garden visit >>
         \n Response: The response should be in JSON format:
         {
           "response": {

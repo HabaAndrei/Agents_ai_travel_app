@@ -9,6 +9,7 @@
     "firebase": "^10.14.1",
     "fuzzy-search": "^3.2.1",
     "nodemailer": "^6.9.15",
-    "openai": "^4.61.0"
+    "openai": "^4.61.0",
+    "zod": "^3.24.1"
   }
 }
