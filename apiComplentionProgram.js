@@ -114,7 +114,8 @@ class ApiComplentionProgram {
     try{
 
       const nameIndexAddressLocationsAr = this.locations.map((ob, index)=>{
-        return {name: ob.name, id: index, address: ob.address}
+        const {name, address, dataTimeLocation} = ob;
+        return {name, address, dataTimeLocation, id: index}
       });
 
       const nameIndexLocationsAr = this.locations.map((ob, index)=>{
@@ -274,12 +275,11 @@ class ApiComplentionProgram {
       }else{
 
         mesContent = `
-          \n Objective: You are a specialist in optimizing travel itineraries based on location schedules, visiting hours and time wasted in traffic.
-          \n Task: You will receive a day itinerary with multiple tourist locations and your job is to organize these locations into a one-day schedule.
+          \n Task: You receive a day itinerary with multiple tourist locations and your job is to organize these locations into a one-day schedule.
           \n << Considerations for time at the location: The time I should arrive at the location will be estimated based on the time it takes to get there when it's open, the time I want to spend visiting, and the time lost in traffic during the journey. >>
           \n Restrictions:
-              Do not add any extra locations to the schedule.
               Only use the provided list of locations, and avoid modifying them.
+              The order of locations in the schedule should be calculated efficiently, and the next location should always be the one closest to the current location.          >>
           \n Response: The response should be provided in JSON format, for example:
           {
             program: [
@@ -300,10 +300,8 @@ class ApiComplentionProgram {
         `;
       }
 
-      if(typeof(activities) != 'string')activities = JSON.stringify(activities);
-
       const textPromptSystem = mesContent;
-      const textPromptUser = `This is the date: ${date}, and this is the itinerary I want to create in the format from the system role example above: ${activities},
+      const textPromptUser = `This is the date: ${date}, and this is the itinerary I want to create in the format from the system role example above: ${JSON.stringify(activities)},
         for ${this.city}, ${this.country}.`;
 
       const resultCompletionProgramDayLlm = await this.LlmCallWithJsonResponse(textPromptSystem, textPromptUser);
@@ -311,11 +309,41 @@ class ApiComplentionProgram {
         return this.completionProgramDay(date, activities, day);
       }
       let program = resultCompletionProgramDayLlm.data.program;
-      if(typeof(contentDayProgram) === 'string')contentDayProgram = JSON.parse(contentDayProgram);
+
+
+      if(program.length != activities.length){
+        return this.completionProgramDay(date, activities, day)
+      }
+
+      const resultVerifyProgramDay = await this.verifyEfficiencyProgramDay(program);
+      const isRespectingTheRulesEfficiencyProgramDay = resultVerifyProgramDay.data.isRespectingTheRules;
+      if(resultVerifyProgramDay?.isResolved && !isRespectingTheRulesEfficiencyProgramDay){
+        return this.completionProgramDay(date, activities, day);
+      }
+
       return {isResolved: true, data: {activities: program, day}}
     }catch(err){
       console.log('err at completionProgramDay', err)
       return {isResolved: false, err: err?.message};
+    }
+  }
+
+  async verifyEfficiencyProgramDay(program){
+    try{
+      const textPromptSystem = `
+      \n Task: Your task is to verify whether the day program is efficient and avoids returning to the same place multiple times.
+      \n Response: the response should be in json format:
+        { isRespectingTheRules: true / false }
+      `;
+      const textPromptUser = 'Verify this program: ' + JSON.stringify(program);
+      const resultVerifyProgramDayLlm = await this.LlmCallWithJsonResponse(textPromptSystem, textPromptUser);
+      if(!resultVerifyProgramDayLlm.isResolved){
+        return this.verifyEfficiencyProgramDay(activities, program);
+      }
+      let result = resultVerifyProgramDayLlm.data;
+      return {isResolved: true, data: result};
+    }catch(err){
+      return {isResolved: false};
     }
   }
 
