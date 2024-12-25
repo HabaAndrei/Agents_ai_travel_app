@@ -161,17 +161,17 @@ class ApiComplentionLocations {
             "packages": {
             // Include this property only if you can find available packages for the location. If no packages are available, do not include this property.
             "1": {
-              "name": "Garden tour",
+              "name": "Garden tour", // maxim 5 words
               "average_visiting_hours": 1,
               "selected": false,
             },
             "2": {
-              "name": "Lake tour",
+              "name": "Lake tour", // maxim 5 words
               "average_visiting_hours": 1,
               "selected": false,
             },
             "3": {
-              "name": "Garden tour with lake",
+              "name": "Garden tour with lake", // maxim 5 words
               "average_visiting_hours": 2,
               "selected": false,
             },
