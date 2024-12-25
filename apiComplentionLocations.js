@@ -6,6 +6,8 @@ const apiKeyGoogleMaps = API_KEY_GOOGLE_MAP;
 const axios = require('axios');
 const {initializeApp} = require("firebase/app");
 const {getFirestore, setDoc, getDoc, doc} = require("firebase/firestore");
+const { zodResponseFormat } = require("openai/helpers/zod");
+const  z = require("zod");
 
 const firebaseConfig = {
   apiKey: APIKEY,
@@ -32,8 +34,8 @@ class ApiComplentionLocations {
     this.countVerifyLocations = 0
   }
 
-  // universal function to call open ai with json response only
-  async LlmCallWithJsonResponse(systemPrompt, userPrompt){
+  // universal function to call open ai with zod response only
+  async LlmCallWithZodResponseFormat(systemPrompt, userPrompt, Response){
     try {
       const completion = await openai.chat.completions.create({
         messages: [{
@@ -44,13 +46,13 @@ class ApiComplentionLocations {
           'content': userPrompt
         }],
         model: 'gpt-4o-mini',
-        response_format: { "type": "json_object" },
+        response_format: zodResponseFormat(Response, "response"),
         temperature: 0,
       });
 
       let result = completion.choices[0]?.message?.content;
       if(typeof result === 'string')result = JSON.parse(result);
-      return {isResolved: true, data: result};
+      return {isResolved: true, data: result?.response};
     }catch(err){
       console.log({err});
       return {isResolved: false, err};
@@ -154,39 +156,27 @@ class ApiComplentionLocations {
           2. The packages should contain information only about that specific location, without including data from other locations, even if they are nearby, or in the same building.
           (example: In Burj Khalifa, Dubai, I want the packages to include only Burj Khalifa activities, not the Dubai Mall or the fountain spectacle." )
           3. The packages should complement each other, as in this example: << 1. Garden visit 2. Lake visit 3. Lake plus Garden visit >>
-        \n Response: The response should be in JSON format:
-        {
-          "response": {
-            "average_hours_visiting_full_location": 4,
-            "packages": {
-            // Include this property only if you can find available packages for the location. If no packages are available, do not include this property.
-            "1": {
-              "name": "Garden tour", // maxim 5 words
-              "average_visiting_hours": 1,
-              "selected": false,
-            },
-            "2": {
-              "name": "Lake tour", // maxim 5 words
-              "average_visiting_hours": 1,
-              "selected": false,
-            },
-            "3": {
-              "name": "Garden tour with lake", // maxim 5 words
-              "average_visiting_hours": 2,
-              "selected": false,
-            },
-            // Add additional packages as needed.
-            }
-          }
-        }
       `;
       const textPromptUser = `Place: ${place} from ${this.city}, ${this.country}`;
 
-      const resultTimeToLocationLlm = await this.LlmCallWithJsonResponse(textPromptSystem, textPromptUser);
+      const Packages = z.object({
+        name: z.string().describe('Maxim 5 words'),
+        average_visiting_hours: z.number(),
+        selected: z.boolean().describe('allways false')
+      })
+
+      const JsonSchema = z.object({
+        response: z.object({
+          average_hours_visiting_full_location: z.number(),
+          packages: z.array(Packages).describe('Include this property only if you can find available packages for the location. If no packages are available, do not include this property')
+        })
+      });
+
+      const resultTimeToLocationLlm =  await this.LlmCallWithZodResponseFormat(textPromptSystem, textPromptUser, JsonSchema);
       if(!resultTimeToLocationLlm.isResolved){
         return this.visitPackages(place, index);
       }
-      let resultTour = resultTimeToLocationLlm?.data?.response;
+      let resultTour = resultTimeToLocationLlm?.data;
       return {isResolved: true, data: resultTour, index};
     }catch(err){
         return {isResolved: false, err};
@@ -202,10 +192,14 @@ class ApiComplentionLocations {
       const textPromptSystem = `
       \n Task: Your task is to verify if all places belong to a specific location.
         If even one place is not from that location, the verification should return false, as shown in the example below.
-      \n Response: the response should be in json format:
-        {isRespectingTheRules: true / false}
       `;
-      const resultVerifyLocations = await this.LlmCallWithJsonResponse(textPromptSystem, textPromptUser);
+      const JsonSchema = z.object({
+        response: z.object({
+          isRespectingTheRules: z.boolean().describe('true / false')
+        })
+      })
+
+      const resultVerifyLocations = await this.LlmCallWithZodResponseFormat(textPromptSystem, textPromptUser, JsonSchema);
       if(!resultVerifyLocations.isResolved){
         return this.verifyProximitylocations(locations, prompt);
       }
@@ -235,22 +229,18 @@ class ApiComplentionLocations {
         \n Task: Your goal is to return a list of places to visit based on a given location and a list of [Activities].
         The locations must not be repeated.  ${numberOfPlacesPrompt}
         \n Attention: Ensure the locations provided match the given category of interest: ${categories}. ${requirememtPrompt}
-        \n Note: The response should be formatted in JSON, as follows:
-        {
-          "unique_places": [
-            {
-              "name": "The Global Village", // the name in english
-              "alias": "The Global Village" // the name in the country's languge
-            },
-            {
-              "name": "The Dubai Fountain", // the name in english
-              "alias" : "The Dubai Fountain" //  // the name in the country's languge
-            },
-          ]
-        }
       `;
+      const UniquePlace = z.object({
+      	name: z.string().describe("the name in english"),
+        alias: z.string().describe("the name in the country's languge"),
+      })
+      const JsonSchema = z.object({
+      	response: z.object({
+      		unique_places: z.array(UniquePlace)
+      	})
+      });
 
-      const resultLocationsLlm = await this.LlmCallWithJsonResponse(textPromptSystem, textPromptUser);
+      const resultLocationsLlm = await this.LlmCallWithZodResponseFormat(textPromptSystem, textPromptUser, JsonSchema);
       if(!resultLocationsLlm.isResolved){
         return this.getAllPlacesAboutLocations();
       }
@@ -266,6 +256,7 @@ class ApiComplentionLocations {
 
       const {unique_places} = resultLocations;
       const unique_names = unique_places.map((ob)=>ob.name);
+
       // filter only unique places
       const arIndexOfUniquePlaces = this.returnUniqueValesFromArray(unique_names);
       const arWithNameAlias = arIndexOfUniquePlaces.map((index)=>unique_places[index])
