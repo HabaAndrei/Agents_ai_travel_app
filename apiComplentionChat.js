@@ -2,6 +2,8 @@ require('dotenv').config();
 const  OpenAI = require('openai');
 const {API_KEY_OPENAI} = process.env;
 const openai = new OpenAI({ apiKey: API_KEY_OPENAI });
+const { zodResponseFormat } = require("openai/helpers/zod");
+const  z = require("zod");
 
 class ApiComplentionChat {
 
@@ -11,8 +13,8 @@ class ApiComplentionChat {
     this.information = information;
   }
 
-  // universal function to call open ai with json response only
-  async LlmCallWithJsonResponse(systemPrompt, userPrompt){
+  // universal function to call open ai with zod response only
+  async LlmCallWithZodResponseFormat(systemPrompt, userPrompt, Response){
     try {
       const completion = await openai.chat.completions.create({
         messages: [{
@@ -23,13 +25,13 @@ class ApiComplentionChat {
           'content': userPrompt
         }],
         model: 'gpt-4o-mini',
-        response_format: { "type": "json_object" },
+        response_format: zodResponseFormat(Response, "response"),
         temperature: 0,
       });
 
       let result = completion.choices[0]?.message?.content;
       if(typeof result === 'string')result = JSON.parse(result);
-      return {isResolved: true, data: result};
+      return {isResolved: true, data: result?.response};
     }catch(err){
       console.log({err});
       return {isResolved: false, err};
@@ -43,11 +45,14 @@ class ApiComplentionChat {
       const textPromptSystem = `
         \n Task: Check text follws rules: 1. No harm/violence 2. No illegal acts  4. SFW content  5. No PII  6. No unauthorized access
         7. Banned topics:  - Violence  - Illegal acts  - Hate speech  - Private data  - Hacking  - Fraud
-        \n Response: The response should be in JSON format, indicating whether the context and question adhere to the rules
-        {is_correct_question: true/ false}
       `;
-      const textPromptUser = `The history of conversation: ${historyConv}.`
-      const resultAcceptOrRejectQuestionLlm = await this.LlmCallWithJsonResponse(textPromptSystem, textPromptUser);
+      const textPromptUser = `The history of conversation: ${historyConv}.`;
+      const JsonSchema = z.object({
+        response: z.object({
+          is_correct_question: z.boolean().describe('true / false')
+        })
+      })
+      const resultAcceptOrRejectQuestionLlm = await this.LlmCallWithZodResponseFormat(textPromptSystem, textPromptUser, JsonSchema);
       if(!resultAcceptOrRejectQuestionLlm.isResolved){
         return this.acceptOrRejectQuestion(historyConv);
       }
