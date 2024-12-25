@@ -11,6 +11,7 @@ class ApiComplentionChat {
     this.information = information;
   }
 
+  // universal function to call open ai with json response only
   async LlmCallWithJsonResponse(systemPrompt, userPrompt){
     try {
       const completion = await openai.chat.completions.create({
@@ -35,6 +36,7 @@ class ApiComplentionChat {
     }
   }
 
+  // function that accept or refuze the question
   async acceptOrRejectQuestion(historyConv){
     try{
       if(typeof(historyConv) != 'string')historyConv = JSON.stringify(historyConv);
@@ -57,6 +59,7 @@ class ApiComplentionChat {
     }
   }
 
+  // the main function
   async responseQuestion(){
     try{
       const appManual = `
@@ -101,6 +104,7 @@ class ApiComplentionChat {
         }
       ];
 
+      // create history of conversation
       this.histoyConv.forEach((mes)=>{
         if(mes.type === 'user'){
           messages.push({"role": "user", "content": mes.mes});
@@ -109,6 +113,7 @@ class ApiComplentionChat {
         }
       });
 
+      // verify if the question is accepted by our acceptance creteria
       const rezAcceptRefuze = await this.acceptOrRejectQuestion(this.histoyConv);
       if(!rezAcceptRefuze.isResolved || !rezAcceptRefuze.data){
         return  {isResolved: true, data: "Information not available."}

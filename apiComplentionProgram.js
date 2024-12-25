@@ -15,6 +15,7 @@ class ApiComplentionProgram {
     this.countVerificationEfficiencyProgram = 0;
   }
 
+  // universal function to call open ai with json response only
   async LlmCallWithJsonResponse(systemPrompt, userPrompt){
     try {
       const completion = await openai.chat.completions.create({
@@ -39,6 +40,7 @@ class ApiComplentionProgram {
     }
   }
 
+  // get details for a specific location
   async getDetailsPlace(name, idPlace){
     try{
       const textPromptSystem =  `
@@ -64,6 +66,7 @@ class ApiComplentionProgram {
     }
   }
 
+  // this function verifies if all places are included in program
   verifyExistenceOfLocationsFromProgram(locations, program){
     try{
       const arrayDays = Object.values(program);
@@ -87,7 +90,7 @@ class ApiComplentionProgram {
     }
   }
 
-
+  // this function verifies if the program is efficient
   async verifyEfficiencyProgram(program){
     if (typeof program != 'string') program = JSON.stringify(program);
     try {
@@ -110,6 +113,7 @@ class ApiComplentionProgram {
     }
   }
 
+  // create program function
   async createProgram(){
     try{
 
@@ -122,6 +126,7 @@ class ApiComplentionProgram {
         return {name: ob.name, index}
       });
 
+      // for each location get details
       const arrayPromisesDetails = this.locations.map((ob, index)=>{
         return this.getDetailsPlace(ob.name, index);
       })
@@ -176,6 +181,7 @@ class ApiComplentionProgram {
         The itinerary should be from the dates ${this.from} to ${this.to}, for ${this.city}, ${this.country}.
       `;
 
+      // create the program
       const resultProgramLlm = await this.LlmCallWithJsonResponse(textPromptSystem, textPromptUser);
       if(!resultProgramLlm.isResolved){
         return this.createProgram();
@@ -197,7 +203,7 @@ class ApiComplentionProgram {
         return this.createProgram();
       }
 
-      // adaug program/orarul de functionalitate ale locatiilor
+      // add the schedule/operating hours of the locations
       for(let key of Object.keys(program)){
         let dayProgram = program[key];
         const activitiesWithProgram = dayProgram.activities.map((ob)=>{
@@ -207,7 +213,7 @@ class ApiComplentionProgram {
         program[key].activities = activitiesWithProgram
       }
 
-      // pentru fiecare zi adaug ora la care sa mearga la obiective
+      // For each day, add the time to visit the attractions.
       ///////////////////////////////////////////////////////////////////////////////////
       const arrayPromisesProgramDay = Object.values(program).map((dayProgram)=>{
         return this.completionProgramDay(dayProgram.date, dayProgram.activities, dayProgram.day);
@@ -250,7 +256,7 @@ class ApiComplentionProgram {
     }
   }
 
-
+  // order location for each day
   async completionProgramDay(date, activities, day){
     try{
       let mesContent = '';
@@ -273,7 +279,6 @@ class ApiComplentionProgram {
           }
         `;
       }else{
-
         mesContent = `
           \n Task: You receive a day itinerary with multiple tourist locations and your job is to organize these locations into a one-day schedule.
           \n << Considerations for time at the location: The time I should arrive at the location will be estimated based on the time it takes to get there when it's open, the time I want to spend visiting, and the time lost in traffic during the journey. >>
@@ -315,6 +320,7 @@ class ApiComplentionProgram {
         return this.completionProgramDay(date, activities, day)
       }
 
+      // verify efficiency of program
       const resultVerifyProgramDay = await this.verifyEfficiencyProgramDay(program);
       const isRespectingTheRulesEfficiencyProgramDay = resultVerifyProgramDay.data.isRespectingTheRules;
       if(resultVerifyProgramDay?.isResolved && !isRespectingTheRulesEfficiencyProgramDay){
@@ -346,7 +352,6 @@ class ApiComplentionProgram {
       return {isResolved: false};
     }
   }
-
 
 }
 

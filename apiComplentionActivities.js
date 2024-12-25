@@ -11,6 +11,7 @@ class ApiComplentionActivities {
     this.country = country;
   }
 
+  // universal function to call open ai with json response only
   async LlmCallWithJsonResponse(systemPrompt, userPrompt){
     try {
       const completion = await openai.chat.completions.create({
@@ -35,7 +36,7 @@ class ApiComplentionActivities {
     }
   }
 
-
+  // get specific parameter for location
   async paramsAboutLocation(){
     try{
       const textPromptSystem = `
@@ -56,6 +57,8 @@ class ApiComplentionActivities {
 
       const textPromptUser = 'Location: ' + this.city + '  from  ' + this.country;
       const resultParamsAboutLocationLlm = await this.LlmCallWithJsonResponse(textPromptSystem, textPromptUser);
+
+      // If the request to OpenAI fails, I will call the function again
       if(!resultParamsAboutLocationLlm.isResolved){
         return this.paramsAboutLocation();
       }
@@ -74,11 +77,15 @@ class ApiComplentionActivities {
         \n Response: The answer should be sent only in json form. eg. {'activities' : {'1': 'sport', '2': 'history', '3': 'wellness', etc...} }
       `;
       const textPromptUser = 'Location: ' + this.city + '  from  ' + this.country;
+
+      // create request to open ai to recive activities
       const resultCreateActivitiesLlm = await this.LlmCallWithJsonResponse(textPromptSystem, textPromptUser);
       if(!resultCreateActivitiesLlm.isResolved){
         return this.createActivities();
       }
       let resultActivities = resultCreateActivitiesLlm.data;
+
+      // get parameters for locations
       const paramsLocation = await this.paramsAboutLocation();
       return paramsLocation.isResolved ? {isResolved: true, data: resultActivities, paramsLocation} : {isResolved: true, data: resultActivities};
     }catch(err){

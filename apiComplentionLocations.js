@@ -32,6 +32,7 @@ class ApiComplentionLocations {
     this.countVerifyLocations = 0
   }
 
+  // universal function to call open ai with json response only
   async LlmCallWithJsonResponse(systemPrompt, userPrompt){
     try {
       const completion = await openai.chat.completions.create({
@@ -62,6 +63,7 @@ class ApiComplentionLocations {
     return newAr;
   }
 
+  // this function returns link image for a specific reference
   async returnImgLink(reference){
     let rezFin = {isResolved: true, url: ''};
     try{
@@ -74,7 +76,8 @@ class ApiComplentionLocations {
     return rezFin;
   }
 
-  async dataFromGoogle(place, indexPlace){
+  // This function retrieves location details from the Google Maps API
+  async locationDetailsFromGoogleApi(place, indexPlace){
 
     let rezFin = {isResolved: true, data: '', index: indexPlace}
     try{
@@ -82,12 +85,13 @@ class ApiComplentionLocations {
       const input = [locationName, 'City:', this.city, 'Country:', this.country].join('%20');
       const addressAndIdPlace = await axios.post('https://maps.googleapis.com/maps/api/place/findplacefromtext/json?fields=formatted_address%2Cplace_id&input=' + input + '&inputtype=textquery&key=' + apiKeyGoogleMaps);
       if(!addressAndIdPlace?.data?.candidates?.[0]){
-        rezFin = {isResolved: false, err: 'value: addressAndIdPlace?.data?.candidates?.[0] from function dataFromGoogle is undefined'}
+        rezFin = {isResolved: false, err: 'value: addressAndIdPlace?.data?.candidates?.[0] from function locationDetailsFromGoogleApi is undefined'}
         return rezFin;
       }
       const {formatted_address, place_id} = addressAndIdPlace?.data?.candidates?.[0];
       const address = formatted_address;
 
+      // If the place already exists in the database, I send the data from the database
       if(place_id){
         const docRef = doc(db, "places", place_id);
         const docSnap = await getDoc(docRef);
@@ -107,6 +111,7 @@ class ApiComplentionLocations {
       const arrayProgramPlace = detailsPlace?.data?.result?.opening_hours?.weekday_text;
       const referincesPhotosArray = detailsPlace?.data?.result?.photos?.map((ob)=>ob.photo_reference);
 
+      // get image link for each reference
       let arrayWithLinkImages = [];
       const arrayWithPromisesImages = referincesPhotosArray.map((ref)=>{
         return this.returnImgLink(ref);
@@ -128,6 +133,7 @@ class ApiComplentionLocations {
         arrayWithLinkImages: arrayWithLinkImages ? arrayWithLinkImages : []
       }
 
+      // save the place in database
       if(place_id)setDoc(doc(db, "places", place_id), obData);
 
       rezFin = {isResolved: true, data: obData, index: indexPlace}
@@ -138,7 +144,8 @@ class ApiComplentionLocations {
     return rezFin;
   }
 
-  async timeToLocation(place, index){
+  // this function retrive visit packages for a specific location
+  async visitPackages(place, index){
     try{
       const textPromptSystem = `
         \n Task: You are an expert providing an estimation of the time required to visit a location and the available packages for visiting that location.
@@ -177,7 +184,7 @@ class ApiComplentionLocations {
 
       const resultTimeToLocationLlm = await this.LlmCallWithJsonResponse(textPromptSystem, textPromptUser);
       if(!resultTimeToLocationLlm.isResolved){
-        return this.timeToLocation(place, index);
+        return this.visitPackages(place, index);
       }
       let resultTour = resultTimeToLocationLlm?.data?.response;
       return {isResolved: true, data: resultTour, index};
@@ -186,7 +193,8 @@ class ApiComplentionLocations {
     }
   }
 
-  async verifyLocations(locations, prompt){
+  // Verify if the locations are within the proximity area
+  async verifyProximitylocations(locations, prompt){
     if (typeof locations != 'string') locations = JSON.stringify(locations);
     try {
       this.countVerifyLocations+=1;
@@ -199,7 +207,7 @@ class ApiComplentionLocations {
       `;
       const resultVerifyLocations = await this.LlmCallWithJsonResponse(textPromptSystem, textPromptUser);
       if(!resultVerifyLocations.isResolved){
-        return this.verifyLocations(locations, prompt);
+        return this.verifyProximitylocations(locations, prompt);
       }
       let result = resultVerifyLocations.data;
       return {isResolved: true, data: result?.isRespectingTheRules};
@@ -208,7 +216,7 @@ class ApiComplentionLocations {
     }
   }
 
-
+  // get locations to visit in a city
   async getAllPlacesAboutLocations(){
     try{
       let textPromptUser = 'Location: ' + this.city + '  from  ' + this.country;
@@ -248,7 +256,9 @@ class ApiComplentionLocations {
       }
       let resultLocations = resultLocationsLlm.data;
 
-      const resultVerification = await this.verifyLocations(resultLocations, textPromptUser);
+      const resultVerification = await this.verifyProximitylocations(resultLocations, textPromptUser);
+
+      // Execute a maximum of 3 times if the LLM does not provide a location to be included in the acceptance criteria
       if(resultVerification?.isResolved && !resultVerification?.data && this.countVerifyLocations < 3){
         console.log('is executing again: ', this.countVerifyLocations);
         return this.getAllPlacesAboutLocations();
@@ -256,25 +266,28 @@ class ApiComplentionLocations {
 
       const {unique_places} = resultLocations;
       const unique_names = unique_places.map((ob)=>ob.name);
+      // filter only unique places
       const arIndexOfUniquePlaces = this.returnUniqueValesFromArray(unique_names);
       const arWithNameAlias = arIndexOfUniquePlaces.map((index)=>unique_places[index])
 
+      // get details for each location
       const arrayWithCalls = arWithNameAlias.map((objectNameAlias, index)=>{
         const {alias} = objectNameAlias;
-        return this.dataFromGoogle(alias, index);
+        return this.locationDetailsFromGoogleApi(alias, index);
       })
 
       const dataFromGoogleCalls = await Promise.all(arrayWithCalls);
 
-      const arrayCallsTimeLocations = arWithNameAlias.map((objectNameAlias, index)=>{
+      //get visit packages for each location
+      const arrayCallsVisitPackages = arWithNameAlias.map((objectNameAlias, index)=>{
         const {alias} = objectNameAlias;
-        return this.timeToLocation(alias, index);
+        return this.visitPackages(alias, index);
       });
 
-      const dataFromTimeLocations = await Promise.all(arrayCallsTimeLocations);
+      const dataFromVisitPackages = await Promise.all(arrayCallsVisitPackages);
 
-      const findTimeLocation = (index) => {
-        const ob = dataFromTimeLocations.find((ob)=>ob.index === index);
+      const findVisitPackagesLocation = (index) => {
+        const ob = dataFromVisitPackages.find((ob)=>ob.index === index);
         return !ob?.isResolved ? {} : {...ob?.data};
       };
 
@@ -285,7 +298,7 @@ class ApiComplentionLocations {
         const {location, place_id, arrayProgramPlace, arrayWithLinkImages, address,
           urlLocation, website, geometry_location} = ob.data;
         const index_ = ob.index;
-        const dataTimeLocation = findTimeLocation(index_);
+        const dataTimeLocation = findVisitPackagesLocation(index_);
         arrayWithAllData.push(
           {
             name: location,
