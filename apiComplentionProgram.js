@@ -2,6 +2,8 @@ require('dotenv').config();
 const  OpenAI = require('openai');
 const {API_KEY_OPENAI} = process.env;
 const openai = new OpenAI({ apiKey: API_KEY_OPENAI });
+const { zodResponseFormat } = require("openai/helpers/zod");
+const  z = require("zod");
 
 class ApiComplentionProgram {
 
@@ -15,8 +17,8 @@ class ApiComplentionProgram {
     this.countVerificationEfficiencyProgram = 0;
   }
 
-  // universal function to call open ai with json response only
-  async LlmCallWithJsonResponse(systemPrompt, userPrompt){
+  // universal function to call open ai with zod response only
+  async LlmCallWithZodResponseFormat(systemPrompt, userPrompt, Response){
     try {
       const completion = await openai.chat.completions.create({
         messages: [{
@@ -27,13 +29,13 @@ class ApiComplentionProgram {
           'content': userPrompt
         }],
         model: 'gpt-4o-mini',
-        response_format: { "type": "json_object" },
+        response_format: zodResponseFormat(Response, "response"),
         temperature: 0,
       });
 
       let result = completion.choices[0]?.message?.content;
       if(typeof result === 'string')result = JSON.parse(result);
-      return {isResolved: true, data: result};
+      return {isResolved: true, data: result?.response};
     }catch(err){
       console.log({err});
       return {isResolved: false, err};
@@ -44,16 +46,18 @@ class ApiComplentionProgram {
   async getDetailsPlace(name, idPlace){
     try{
       const textPromptSystem =  `
-        Task: Return information in JSON format about a given location, following this structure:
-        {
-          "name": "The name provided in the input",
-          "id": "The ID provided in the input",
-          "description": "A short description of the location, including historical details, no longer than 30 words",
-          "info": "Key details about the location, including guidance on how to purchase tickets (excluding price information), no longer than 30 words"
-        }
+        Task: Return information in JSON format about a given location, following this structure.
       `;
+      const JsonSchema = z.object({
+        response: z.object({
+          name: z.string().describe('The name provided in the input'),
+          id: z.string().describe('The ID provided in the input'),
+          description: z.string().describe('A short description of the location, including historical details, no longer than 30 words'),
+          info: z.string().describe('Key details about the location, including guidance on how to purchase tickets (excluding price information), no longer than 30 words'),
+        })
+      })
       const textPromptUser =  `Location: {name: ${name} id: ${idPlace}}, From ${this.city}, ${this.country}`;
-      const resultDetailsPlacesLlm = await this.LlmCallWithJsonResponse(textPromptSystem, textPromptUser);
+      const resultDetailsPlacesLlm = await this.LlmCallWithZodResponseFormat(textPromptSystem, textPromptUser, JsonSchema);
       if(!resultDetailsPlacesLlm.isResolved){
         return this.getDetailsPlace(name, idPlace);
       }
@@ -69,9 +73,8 @@ class ApiComplentionProgram {
   // this function verifies if all places are included in program
   verifyExistenceOfLocationsFromProgram(locations, program){
     try{
-      const arrayDays = Object.values(program);
       let activities = [];
-      arrayDays.forEach((dayValues)=>activities = activities.concat(dayValues.activities));
+      program.forEach((dayValues)=>activities = activities.concat(dayValues.activities));
       if(locations.length != activities.length)return {isResolved: true, existAllLocations: false}
 
       locations.forEach((location, i)=>{
@@ -96,13 +99,16 @@ class ApiComplentionProgram {
     try {
       this.countVerificationEfficiencyProgram += 1;
       const textPromptSystem =  `
-        \n Task: Your task is to check if the locations are grouped by days based on their proximity.
+        Task: Your task is to check if the locations are grouped by days based on their proximity.
         The program is a visit intinerary. The visit should be very efficient, in order not to return to the same place several times.
-        \n Response: the response should be in json format:
-          { isRespectingTheRules: true / false }
-       `;
+      `;
       const textPromptUser =  `Program: ${program}.`;
-      const resultEfficiencyProgramLlm = await this.LlmCallWithJsonResponse(textPromptSystem, textPromptUser);
+      const JsonSchema = z.object({
+        response: z.object({
+          isRespectingTheRules: z.boolean().describe('true / false')
+        })
+      })
+      const resultEfficiencyProgramLlm = await this.LlmCallWithZodResponseFormat(textPromptSystem, textPromptUser, JsonSchema);
       if(!resultEfficiencyProgramLlm.isResolved){
         return this.verifyEfficiencyProgram(program);
       }
@@ -144,45 +150,31 @@ class ApiComplentionProgram {
         in order not to return to the same place several times.
         If there are fewer activities than days, don t generate my days without activities.
       \n Cosideration: Include all locations received within the date range, even if there are too many locations per day.
-      \n Response: The result should be in a valid JSON format. e.g.
-        {
-          "program": {
-            "1": {
-              "day": 1,
-              "title": "Title of the objectives",
-              "date": "2024-09-15",
-              "activities": [
-                {
-                  "place": "The Palm Dubai",
-                  "id": "Here, give me the ID that corresponds to the location from the input"
-                }
-                // Additional activities can go here...
-              ]
-            },
-            "2": {
-              "day": 2,
-              "title": "Title of the objectives",
-              "date": "2024-09-16",
-              "activities": [
-                {
-                  "place": "Another location",
-                  "id": "Here, give me the ID that corresponds to the location from the input"
-                }
-                // Additional activities can go here...
-              ]
-            }
-            // Additional days can go here...
-          }
-        }
-        \n << Important: Make sure you meet all the requirements above, especially the structure. >>
+      \n Important: Make sure you meet all the requirements above, especially the structure.
       `;
       const textPromptUser = `
         This is an array of objects with their IDs << ${nameIndexAddressLocationsArString} >>
         The itinerary should be from the dates ${this.from} to ${this.to}, for ${this.city}, ${this.country}.
       `;
 
+      const   Activities = z.object({
+        place: z.string().describe('The name of the place e.g. "The Palm Dubai"'),
+        id: z.number().describe('Here, give me the ID that corresponds to the location from the input')
+      });
+      const Days = z.object({
+        day: z.number().describe('The number of the day'),
+        title: z.string().describe('Title of the objectives'),
+        date: z.string().describe('e.g. "2024-09-15"'),
+        activities: z.array(Activities)
+      });
+      const JsonSchema = z.object({
+        response: z.object({
+          program: z.array(Days)
+        })
+      });
+
       // create the program
-      const resultProgramLlm = await this.LlmCallWithJsonResponse(textPromptSystem, textPromptUser);
+      const resultProgramLlm = await this.LlmCallWithZodResponseFormat(textPromptSystem, textPromptUser, JsonSchema);
       if(!resultProgramLlm.isResolved){
         return this.createProgram();
       }
@@ -192,10 +184,11 @@ class ApiComplentionProgram {
       const verificationExistenceOfLocationsFromProgram = this.verifyExistenceOfLocationsFromProgram(nameIndexLocationsAr, program);
       const {isResolved, existAllLocations} = verificationExistenceOfLocationsFromProgram
       if(isResolved && !existAllLocations){
-        console.log('doesnt exist all locations and we are call the functio again');
+        console.log('doesnt exist all locations and we are call the function again');
         return this.createProgram();
       }
 
+      // verify efficiency of program
       const verificationEfficiencyProgram = await this.verifyEfficiencyProgram(program)
       const isRespectingTheRulesEfficiencyProgram = verificationEfficiencyProgram.data.isRespectingTheRules;
       if(verificationEfficiencyProgram?.isResolved && !isRespectingTheRulesEfficiencyProgram && this.countVerificationEfficiencyProgram < 5){
@@ -204,18 +197,17 @@ class ApiComplentionProgram {
       }
 
       // add the schedule/operating hours of the locations
-      for(let key of Object.keys(program)){
-        let dayProgram = program[key];
+      for(let dayProgram of program){
         const activitiesWithProgram = dayProgram.activities.map((ob)=>{
           const {arrayProgramPlace, dataTimeLocation} = this.locations[ob.id];
           return {place: ob.place, program: arrayProgramPlace, id: ob.id, dataTimeLocation};
         })
-        program[key].activities = activitiesWithProgram
+        dayProgram.activities = activitiesWithProgram;
       }
 
       // For each day, add the time to visit the attractions.
       ///////////////////////////////////////////////////////////////////////////////////
-      const arrayPromisesProgramDay = Object.values(program).map((dayProgram)=>{
+      const arrayPromisesProgramDay = program.map((dayProgram)=>{
         return this.completionProgramDay(dayProgram.date, dayProgram.activities, dayProgram.day);
       })
       const rezPromisesProgramDay = await Promise.all(arrayPromisesProgramDay);
@@ -240,7 +232,7 @@ class ApiComplentionProgram {
         }
       }
 
-      for(let day of Object.values(program)){
+      for(let day of program){
         const activities = dataFromRezPromisesProgramDay.find((ob)=>{
           if(ob.day === day.day)return ob.activities;
         })
@@ -259,63 +251,45 @@ class ApiComplentionProgram {
   // order location for each day
   async completionProgramDay(date, activities, day){
     try{
-      let mesContent = '';
+      let textPromptSystem = '';
       if(activities.length === 1){
-        mesContent = `
+        textPromptSystem = `
           \n Objective: You are a specialist in optimizing travel itineraries based on location schedules.
           \n Task: Provide me with the location and time as shown in the example below, so that I can visit the location and make a decision based on the schedule.
           \n Restrictions:
-            Do not add any extra locations to the schedule.
-            Only use the provided location, and avoid modifying it.
-          \n Response: The response should be provided in JSON format, for example:
-          {
-            program: [
-              {
-                "time": "10:00",
-                "id": The ID associated with the location in the input,
-                "place": The name of the location in the input
-              }
-            ]
-          }
-        `;
+            Do not add any extra locations to the schedule. Only use the provided location, and avoid modifying it.
+          `;
       }else{
-        mesContent = `
+        textPromptSystem = `
           \n Task: You receive a day itinerary with multiple tourist locations and your job is to organize these locations into a one-day schedule.
           \n << Considerations for time at the location: The time I should arrive at the location will be estimated based on the time it takes to get there when it's open, the time I want to spend visiting, and the time lost in traffic during the journey. >>
           \n Restrictions:
               Only use the provided list of locations, and avoid modifying them.
               The order of locations in the schedule should be calculated efficiently, and the next location should always be the one closest to the current location.          >>
-          \n Response: The response should be provided in JSON format, for example:
-          {
-            program: [
-              {
-                "time": "10:00",
-                "id": The ID associated with the location in the input,
-                "place": The name of the location in the input
-              },
-              {
-                "time": "13:00",
-                "id": The ID associated with the location in the input,
-                "place": The name of the location in the input
-              },
-              etc ...
-            ]
-          }
           \n At the end, please check to ensure that all the requirements have been met.
         `;
       }
-
-      const textPromptSystem = mesContent;
+      const JsonSchema = z.object({
+        response: z.object({
+          program: z.array(
+            z.object({
+              time: z.string().describe('e.g. 10:00'),
+              id: z.string('').describe('The ID associated with the location in the input'),
+              place: z.string('').describe('The name of the location in the input')
+            }).describe('If you receive just one activity, do not generate any additional activities. Create the program using only that one activity.')
+          )
+        })
+      })
       const textPromptUser = `This is the date: ${date}, and this is the itinerary I want to create in the format from the system role example above: ${JSON.stringify(activities)},
         for ${this.city}, ${this.country}.`;
 
-      const resultCompletionProgramDayLlm = await this.LlmCallWithJsonResponse(textPromptSystem, textPromptUser);
+      const resultCompletionProgramDayLlm = await this.LlmCallWithZodResponseFormat(textPromptSystem, textPromptUser, JsonSchema);
       if(!resultCompletionProgramDayLlm.isResolved){
         return this.completionProgramDay(date, activities, day);
       }
-      let program = resultCompletionProgramDayLlm.data.program;
+      let program = resultCompletionProgramDayLlm?.data?.program;
 
-
+      // if the generated program does not have all activities, it will execute again the funtion
       if(program.length != activities.length){
         return this.completionProgramDay(date, activities, day)
       }
@@ -336,13 +310,14 @@ class ApiComplentionProgram {
 
   async verifyEfficiencyProgramDay(program){
     try{
-      const textPromptSystem = `
-      \n Task: Your task is to verify whether the day program is efficient and avoids returning to the same place multiple times.
-      \n Response: the response should be in json format:
-        { isRespectingTheRules: true / false }
-      `;
+      const textPromptSystem = `Task: Your task is to verify whether the day program is efficient and avoids returning to the same place multiple times.`;
       const textPromptUser = 'Verify this program: ' + JSON.stringify(program);
-      const resultVerifyProgramDayLlm = await this.LlmCallWithJsonResponse(textPromptSystem, textPromptUser);
+      const JsonSchema = z.object({
+        response: z.object({
+          isRespectingTheRules: z.boolean().describe('true / false')
+        })
+      })
+      const resultVerifyProgramDayLlm = await this.LlmCallWithZodResponseFormat(textPromptSystem, textPromptUser, JsonSchema);
       if(!resultVerifyProgramDayLlm.isResolved){
         return this.verifyEfficiencyProgramDay(activities, program);
       }
