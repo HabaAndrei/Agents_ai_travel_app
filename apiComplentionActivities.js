@@ -74,6 +74,8 @@ class ApiComplentionActivities {
     try{
       const textPromptSystem = `
         \n Task: You receive a location as input and return a JSON with various activities available in that location, specific in that location.
+          For each activity, there should be locations where it can be done. If the location is not in that area, do not include that activity.
+          Generate only activities that are specific to that location, not from the surrounding areas
         \n Note: Answer as general as possible, not specic, let it be like a category.
       `;
       const textPromptUser = 'Location: ' + this.city + '  from  ' + this.country;

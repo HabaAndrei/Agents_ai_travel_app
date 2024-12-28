@@ -83,12 +83,12 @@ class ApiComplentionLocations {
   }
 
   // This function retrieves location details from the Google Maps API
-  async locationDetailsFromGoogleApi(place, indexPlace){
+  async locationDetailsFromGoogleApi(place, description, indexPlace){
 
     let rezFin = {isResolved: true, data: '', index: indexPlace}
     try{
       const locationName = place.replace(' ', '%20')
-      const input = [locationName, 'City:', this.city, 'Country:', this.country].join('%20');
+      const input = [locationName, 'City:', this.city, 'Country:', this.country, description].join('%20');
       const addressAndIdPlace = await axios.post('https://maps.googleapis.com/maps/api/place/findplacefromtext/json?fields=formatted_address%2Cplace_id&input=' + input + '&inputtype=textquery&key=' + apiKeyGoogleMaps);
       if(!addressAndIdPlace?.data?.candidates?.[0]){
         rezFin = {isResolved: false, err: 'value: addressAndIdPlace?.data?.candidates?.[0] from function locationDetailsFromGoogleApi is undefined'}
@@ -232,16 +232,18 @@ class ApiComplentionLocations {
 
       let textPromptSystem = `
         \n Task: Your goal is to return a list of places to visit based on a given location and a list of [Activities].
-        The locations must not be repeated.  ${numberOfPlacesPrompt}
+          The locations must not be repeated.  ${numberOfPlacesPrompt}
         \n Attention: Ensure the locations provided match the given category of interest: ${categories}. ${requirememtPrompt}
+        \n Verification: Ensure that every activity has at least one associated location.
       `;
-      const UniquePlace = z.object({
+      const UniquePlacesSchema = z.object({
       	name: z.string().describe(`The name in english. The name should be relevant. For example, if you are in Brașov, Romania, and choose Poiana Brașov, don’t just say 'Poiana'; say 'Poiana Brașov,' the full name.`),
         alias: z.string().describe("The name in the country's languge"),
+        description: z.string().describe('Only one word description e.g: road, mountain, lake, church, museum, restaurant, shop')
       })
       const JsonSchema = z.object({
       	response: z.object({
-      		unique_places: z.array(UniquePlace)
+      		unique_places: z.array(UniquePlacesSchema)
       	})
       });
 
@@ -261,17 +263,17 @@ class ApiComplentionLocations {
       const {unique_places} = resultLocations;
 
       // filter only unique places
-      const arWithNameAlias = this.returnUniqueValesFromArray(unique_places);
+      const arWithNameAliasDescription = this.returnUniqueValesFromArray(unique_places);
 
       // get details for each location
-      const arrayWithCalls = arWithNameAlias.map((objectNameAlias, index)=>{
-        const {alias} = objectNameAlias;
-        return this.locationDetailsFromGoogleApi(alias, index);
+      const arrayWithCalls = arWithNameAliasDescription.map((objectNameAlias, index)=>{
+        const {alias, description} = objectNameAlias;
+        return this.locationDetailsFromGoogleApi(alias, description, index);
       })
       const dataFromGoogleCalls = await Promise.all(arrayWithCalls);
 
       // get visit packages for each location
-      const arrayCallsVisitPackages = arWithNameAlias.map((objectNameAlias, index)=>{
+      const arrayCallsVisitPackages = arWithNameAliasDescription.map((objectNameAlias, index)=>{
         const {alias} = objectNameAlias;
         return this.visitPackages(alias, index);
       });
@@ -285,24 +287,25 @@ class ApiComplentionLocations {
 
       // associate details from google api with locations
       let arrayWithAllData = [];
-      for(let ob of dataFromGoogleCalls){
-        if(!ob.isResolved)continue;
+      for(let details of dataFromGoogleCalls){
+        if(!details.isResolved)continue;
         const {location, place_id, arrayProgramPlace, arrayWithLinkImages, address,
-          urlLocation, website, geometry_location} = ob.data;
-        const index_ = ob.index;
+          urlLocation, website, geometry_location} = details.data;
+        const index_ = details.index;
         const dataTimeLocation = findVisitPackagesLocation(index_);
+        const name = arWithNameAliasDescription?.[index_]?.name;
         arrayWithAllData.push(
           {
-            name: location,
-            address : address ? address : '',
-            place_id : place_id ? place_id : '',
-            urlLocation: urlLocation ? urlLocation : '',
-            geometry_location: geometry_location ? geometry_location : '',
-            website: website ? website : '',
-            arrayProgramPlace: arrayProgramPlace ? arrayProgramPlace : [],
-            arrayWithLinkImages: arrayWithLinkImages ? arrayWithLinkImages : [],
+            name: name || '',
+            address : address || '',
+            place_id : place_id || '',
+            urlLocation: urlLocation || '',
+            geometry_location: geometry_location || '',
+            website: website || '',
+            arrayProgramPlace: arrayProgramPlace || [],
+            arrayWithLinkImages: arrayWithLinkImages || [],
             index: index_,
-            dataTimeLocation: dataTimeLocation ? dataTimeLocation : {},
+            dataTimeLocation: dataTimeLocation || {},
           }
         )
       }
