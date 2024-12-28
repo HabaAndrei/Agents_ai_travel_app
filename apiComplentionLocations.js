@@ -61,7 +61,11 @@ class ApiComplentionLocations {
 
   returnUniqueValesFromArray(array){
     let newAr = [];
-    array.forEach((elem, index)=>{if(!newAr.includes(elem))newAr.push(index)});
+    array.forEach((data)=>{
+      const {name, alias} = data;
+      const find = newAr.find((d)=>d?.name === name || d?.alias === alias);
+      if (!find) newAr.push(data);
+    })
     return newAr;
   }
 
@@ -88,6 +92,7 @@ class ApiComplentionLocations {
       const addressAndIdPlace = await axios.post('https://maps.googleapis.com/maps/api/place/findplacefromtext/json?fields=formatted_address%2Cplace_id&input=' + input + '&inputtype=textquery&key=' + apiKeyGoogleMaps);
       if(!addressAndIdPlace?.data?.candidates?.[0]){
         rezFin = {isResolved: false, err: 'value: addressAndIdPlace?.data?.candidates?.[0] from function locationDetailsFromGoogleApi is undefined'}
+        console.log(`Place: ${place} => value: addressAndIdPlace?.data?.candidates?.[0] from function locationDetailsFromGoogleApi is undefined`);
         return rezFin;
       }
       const {formatted_address, place_id} = addressAndIdPlace?.data?.candidates?.[0];
@@ -231,8 +236,8 @@ class ApiComplentionLocations {
         \n Attention: Ensure the locations provided match the given category of interest: ${categories}. ${requirememtPrompt}
       `;
       const UniquePlace = z.object({
-      	name: z.string().describe("the name in english"),
-        alias: z.string().describe("the name in the country's languge"),
+      	name: z.string().describe(`The name in english. The name should be relevant. For example, if you are in Brașov, Romania, and choose Poiana Brașov, don’t just say 'Poiana'; say 'Poiana Brașov,' the full name.`),
+        alias: z.string().describe("The name in the country's languge"),
       })
       const JsonSchema = z.object({
       	response: z.object({
@@ -253,38 +258,34 @@ class ApiComplentionLocations {
         console.log('is executing again: ', this.countVerifyLocations);
         return this.getAllPlacesAboutLocations();
       }
-
       const {unique_places} = resultLocations;
-      const unique_names = unique_places.map((ob)=>ob.name);
 
       // filter only unique places
-      const arIndexOfUniquePlaces = this.returnUniqueValesFromArray(unique_names);
-      const arWithNameAlias = arIndexOfUniquePlaces.map((index)=>unique_places[index])
+      const arWithNameAlias = this.returnUniqueValesFromArray(unique_places);
 
       // get details for each location
       const arrayWithCalls = arWithNameAlias.map((objectNameAlias, index)=>{
         const {alias} = objectNameAlias;
         return this.locationDetailsFromGoogleApi(alias, index);
       })
-
       const dataFromGoogleCalls = await Promise.all(arrayWithCalls);
 
-      //get visit packages for each location
+      // get visit packages for each location
       const arrayCallsVisitPackages = arWithNameAlias.map((objectNameAlias, index)=>{
         const {alias} = objectNameAlias;
         return this.visitPackages(alias, index);
       });
-
       const dataFromVisitPackages = await Promise.all(arrayCallsVisitPackages);
 
+      // associate packages with locations
       const findVisitPackagesLocation = (index) => {
         const ob = dataFromVisitPackages.find((ob)=>ob.index === index);
         return !ob?.isResolved ? {} : {...ob?.data};
       };
 
+      // associate details from google api with locations
       let arrayWithAllData = [];
       for(let ob of dataFromGoogleCalls){
-
         if(!ob.isResolved)continue;
         const {location, place_id, arrayProgramPlace, arrayWithLinkImages, address,
           urlLocation, website, geometry_location} = ob.data;
