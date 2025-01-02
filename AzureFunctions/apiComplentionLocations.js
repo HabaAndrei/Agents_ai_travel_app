@@ -31,7 +31,8 @@ class ApiComplentionLocations {
     this.checkbox = checkbox;
     this.isLocalPlaces = isLocalPlaces;
     this.scaleVisit = scaleVisit;
-    this.countVerifyLocations = 0
+    this.countVerifyLocations = 0;
+    this.rejectionReasonForProximityVerification = '';
   }
 
   // universal function to call open ai with zod response only
@@ -195,12 +196,13 @@ class ApiComplentionLocations {
       this.countVerifyLocations+=1;
       const textPromptUser =  prompt + 'Locations: ' + locations;
       const textPromptSystem = `
-      \n Task: Your task is to verify if all places belong to a specific location.
+      \n Task: Your task is to verify if all places belong to a specific location. The places can be from the surroundings
         If even one place is not from that location, the verification should return false, as shown in the example below.
       `;
       const JsonSchema = z.object({
         response: z.object({
-          isRespectingTheRules: z.boolean().describe('true / false')
+          isRespectingTheRules: z.boolean().describe('true / false'),
+          reason: z.string().describe('This should contain a reason only if isRespectingTheRules is false; otherwise, it can be an empty string.')
         })
       })
 
@@ -209,6 +211,8 @@ class ApiComplentionLocations {
         return this.verifyProximitylocations(locations, prompt);
       }
       let result = resultVerifyLocations.data;
+      this.rejectionReasonForProximityVerification += result.reason;
+      console.log(this.rejectionReasonForProximityVerification, ' <<<<< ========  this.rejectionReasonForProximityVerification');
       return {isResolved: true, data: result?.isRespectingTheRules};
     }catch(err){
       return {isResolved: false};
@@ -236,6 +240,10 @@ class ApiComplentionLocations {
         \n Attention: Ensure the locations provided match the given category of interest: ${categories}. ${requirememtPrompt}
         \n Verification: Ensure that every activity has at least one associated location.
       `;
+      if (this.rejectionReasonForProximityVerification.length) {
+        textPromptSystem += `\n Notice: This is the reason why the result wasn t go last time: ${this.rejectionReasonForProximityVerification}.
+        \n <<<<<  Don t repet the same mistakes >>>>> `
+      }
       const UniquePlacesSchema = z.object({
       	name: z.string().describe(`The name in english. The name should be relevant. For example, if you are in Brașov, Romania, and choose Poiana Brașov, don’t just say 'Poiana'; say 'Poiana Brașov,' the full name.`),
         alias: z.string().describe("The name in the country's languge"),

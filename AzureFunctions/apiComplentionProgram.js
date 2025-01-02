@@ -15,6 +15,7 @@ class ApiComplentionProgram {
     this.country = country;
     this.locations = locations;
     this.countVerificationEfficiencyProgram = 0;
+    this.rejectionReasonForEfficiencyVerification = '';
   }
 
   // universal function to call open ai with zod response only
@@ -105,7 +106,8 @@ class ApiComplentionProgram {
       const textPromptUser =  `Program: ${program}.`;
       const JsonSchema = z.object({
         response: z.object({
-          isRespectingTheRules: z.boolean().describe('true / false')
+          isRespectingTheRules: z.boolean().describe('true / false'),
+          reason: z.string().describe('This should contain a reason only if isRespectingTheRules is false; otherwise, it can be an empty string.')
         })
       })
       const resultEfficiencyProgramLlm = await this.LlmCallWithZodResponseFormat(textPromptSystem, textPromptUser, JsonSchema);
@@ -113,7 +115,9 @@ class ApiComplentionProgram {
         return this.verifyEfficiencyProgram(program);
       }
       let result = resultEfficiencyProgramLlm.data;
-      return {isResolved: true, data: result};
+      this.rejectionReasonForEfficiencyVerification += result.reason;
+      console.log(this.rejectionReasonForEfficiencyVerification, '   rejectionReasonForEfficiencyVerification');
+      return {isResolved: true, data: result.isRespectingTheRules};
     }catch(err){
       return {isResolved: false};
     }
@@ -152,6 +156,10 @@ class ApiComplentionProgram {
       \n Cosideration: Include all locations received within the date range, even if there are too many locations per day.
       \n Important: Make sure you meet all the requirements above, especially the structure.
       `;
+      if(this.rejectionReasonForEfficiencyVerification.length){
+        textPromptSystem += `\n Notice: This is the reason why the result wasn t good last time: ${this.rejectionReasonForEfficiencyVerification}.
+        \n <<<<<  Don t repet the same mistakes >>>>> `;
+      }
       const textPromptUser = `
         This is an array of objects with their IDs << ${nameIndexAddressLocationsArString} >>
         The itinerary should be from the dates ${this.from} to ${this.to}, for ${this.city}, ${this.country}.
@@ -190,8 +198,9 @@ class ApiComplentionProgram {
 
       // verify efficiency of program
       const verificationEfficiencyProgram = await this.verifyEfficiencyProgram(program)
-      const isRespectingTheRulesEfficiencyProgram = verificationEfficiencyProgram.data.isRespectingTheRules;
-      if(verificationEfficiencyProgram?.isResolved && !isRespectingTheRulesEfficiencyProgram && this.countVerificationEfficiencyProgram < 5){
+      console.log({verificationEfficiencyProgram})
+      console.log(verificationEfficiencyProgram.data, ' isRespectingTheRulesEfficiencyProgram')
+      if(verificationEfficiencyProgram?.isResolved && !verificationEfficiencyProgram?.data && this.countVerificationEfficiencyProgram < 3){
         console.log('is executing again: ', this.countVerificationEfficiencyProgram);
         return this.createProgram();
       }

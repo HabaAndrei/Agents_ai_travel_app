@@ -1,10 +1,10 @@
 const express = require('express');
 const app = express();
 const cors = require('cors')
-const {ApiComplentionProgram} = require('./AzureFunctions/apiComplentionProgram.js');
-const {ApiComplentionChat} = require('./AzureFunctions/apiComplentionChat.js');
-const {ApiComplentionLocations} = require('./AzureFunctions/apiComplentionLocations.js');
-const {ApiComplentionActivities} = require('./AzureFunctions/apiComplentionActivities.js');
+const {ApiComplentionProgram} = require('./AzureFunctions/ApiComplentionProgram.js');
+const {ApiComplentionChat} = require('./AzureFunctions/ApiComplentionChat.js');
+const {ApiComplentionLocations} = require('./AzureFunctions/ApiComplentionLocations.js');
+const {ApiComplentionActivities} = require('./AzureFunctions/ApiComplentionActivities.js');
 app.use(cors());
 app.use(express.json());
 
