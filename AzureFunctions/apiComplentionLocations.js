@@ -1,29 +1,16 @@
 require('dotenv').config();
-const  OpenAI = require('openai');
-const {API_KEY_OPENAI, API_KEY_GOOGLE_MAP, MEASUREMENT_ID, APIKEY, AUTH_DOMAIN, PROJECT_ID, STORAGE_BUCKET, MESSAGING_SENDER_ID, APP_ID} = process.env;
-const openai = new OpenAI({ apiKey: API_KEY_OPENAI });
+const { API_KEY_GOOGLE_MAP} = process.env;
 const apiKeyGoogleMaps = API_KEY_GOOGLE_MAP;
 const axios = require('axios');
-const {initializeApp} = require("firebase/app");
-const {getFirestore, setDoc, getDoc, doc} = require("firebase/firestore");
-const { zodResponseFormat } = require("openai/helpers/zod");
+const {setDoc, getDoc, doc} = require("firebase/firestore");
 const  z = require("zod");
+const OpenaiClient = require('./OpenaiClient');
+const Firebase = require('./Firebase');
 
-const firebaseConfig = {
-  apiKey: APIKEY,
-  authDomain: AUTH_DOMAIN,
-  projectId: PROJECT_ID,
-  storageBucket: STORAGE_BUCKET,
-  messagingSenderId: MESSAGING_SENDER_ID,
-  appId: APP_ID,
-  measurementId: MEASUREMENT_ID
-};
-const app_firebase = initializeApp(firebaseConfig);
-const db = getFirestore(app_firebase);
-
-class ApiComplentionLocations {
+class ApiComplentionLocations extends OpenaiClient {
 
   constructor(objectWithVariables){
+    super();
     const {city, country, input, checkbox, isLocalPlaces, scaleVisit} = objectWithVariables;
     this.city = city;
     this.country = country;
@@ -33,31 +20,7 @@ class ApiComplentionLocations {
     this.scaleVisit = scaleVisit;
     this.countVerifyLocations = 0;
     this.rejectionReasonForProximityVerification = '';
-  }
-
-  // universal function to call open ai with zod response only
-  async LlmCallWithZodResponseFormat(systemPrompt, userPrompt, Response){
-    try {
-      const completion = await openai.chat.completions.create({
-        messages: [{
-          role: 'system', content:  systemPrompt
-        },
-        {
-          'role': 'user',
-          'content': userPrompt
-        }],
-        model: 'gpt-4o-mini',
-        response_format: zodResponseFormat(Response, "response"),
-        temperature: 0,
-      });
-
-      let result = completion.choices[0]?.message?.content;
-      if(typeof result === 'string')result = JSON.parse(result);
-      return {isResolved: true, data: result?.response};
-    }catch(err){
-      console.log({err});
-      return {isResolved: false, err};
-    }
+    this.firebaseClass = new Firebase();
   }
 
   returnUniqueValesFromArray(array){
@@ -85,7 +48,7 @@ class ApiComplentionLocations {
 
   // This function retrieves location details from the Google Maps API
   async locationDetailsFromGoogleApi(place, description, indexPlace){
-
+    const db = this.firebaseClass.db;
     let rezFin = {isResolved: true, data: '', index: indexPlace}
     try{
       const locationName = place.replace(' ', '%20')

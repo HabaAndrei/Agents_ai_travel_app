@@ -1,41 +1,13 @@
-require('dotenv').config();
-const  OpenAI = require('openai');
-const {API_KEY_OPENAI} = process.env;
-const openai = new OpenAI({ apiKey: API_KEY_OPENAI });
-const { zodResponseFormat } = require("openai/helpers/zod");
 const  z = require("zod");
+const OpenaiClient = require('./OpenaiClient');
 
-class ApiComplentionActivities {
+class ApiComplentionActivities extends OpenaiClient {
 
   constructor(objectWithVariables){
+    super();
     const {city, country} = objectWithVariables;
     this.city = city;
     this.country = country;
-  }
-
-  // universal function to call open ai with zod response only
-  async LlmCallWithZodResponseFormat(systemPrompt, userPrompt, Response){
-    try {
-      const completion = await openai.chat.completions.create({
-        messages: [{
-          role: 'system', content:  systemPrompt
-        },
-        {
-          'role': 'user',
-          'content': userPrompt
-        }],
-        model: 'gpt-4o-mini',
-        response_format: zodResponseFormat(Response, "response"),
-        temperature: 0,
-      });
-
-      let result = completion.choices[0]?.message?.content;
-      if(typeof result === 'string')result = JSON.parse(result);
-      return {isResolved: true, data: result?.response};
-    }catch(err){
-      console.log({err});
-      return {isResolved: false, err};
-    }
   }
 
   // get specific parameter for location

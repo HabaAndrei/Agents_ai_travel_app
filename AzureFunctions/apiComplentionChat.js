@@ -1,41 +1,13 @@
-require('dotenv').config();
-const  OpenAI = require('openai');
-const {API_KEY_OPENAI} = process.env;
-const openai = new OpenAI({ apiKey: API_KEY_OPENAI });
-const { zodResponseFormat } = require("openai/helpers/zod");
 const  z = require("zod");
+const OpenaiClient = require('./OpenaiClient');
 
-class ApiComplentionChat {
+class ApiComplentionChat extends OpenaiClient {
 
   constructor(objectWithVariables){
+    super();
     const {histoyConv, information} = objectWithVariables;
     this.histoyConv = histoyConv;
     this.information = information;
-  }
-
-  // universal function to call open ai with zod response only
-  async LlmCallWithZodResponseFormat(systemPrompt, userPrompt, Response){
-    try {
-      const completion = await openai.chat.completions.create({
-        messages: [{
-          role: 'system', content:  systemPrompt
-        },
-        {
-          'role': 'user',
-          'content': userPrompt
-        }],
-        model: 'gpt-4o-mini',
-        response_format: zodResponseFormat(Response, "response"),
-        temperature: 0,
-      });
-
-      let result = completion.choices[0]?.message?.content;
-      if(typeof result === 'string')result = JSON.parse(result);
-      return {isResolved: true, data: result?.response};
-    }catch(err){
-      console.log({err});
-      return {isResolved: false, err};
-    }
   }
 
   // function that accept or refuze the question
@@ -124,14 +96,9 @@ class ApiComplentionChat {
         return  {isResolved: true, data: "Information not available."}
       }
 
-      const completion = await openai.chat.completions.create({
-        messages: messages,
-        model: 'gpt-4o-mini',
-        temperature: 0,
-      });
-
-      let rez = completion.choices[0]?.message?.content;
-      return {isResolved: true, data: rez}
+      const rez = await this.LlmCallCompletion(messages);
+      if(!rez.isResolved) return {isResolved: true, data: "Information not available."}
+      return {isResolved: true, data: rez.data}
     }catch(err){
       return {isResolved: false, err: err?.message};
     }
