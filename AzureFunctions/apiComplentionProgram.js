@@ -1,5 +1,7 @@
 const OpenaiClient = require('./OpenaiClient');
+const Firebase = require('./Firebase');
 const  z = require("zod");
+const {setDoc, getDoc, doc} = require("firebase/firestore");
 
 class ApiComplentionProgram extends OpenaiClient {
 
@@ -13,30 +15,37 @@ class ApiComplentionProgram extends OpenaiClient {
     this.locations = locations;
     this.countVerificationEfficiencyProgram = 0;
     this.rejectionReasonForEfficiencyVerification = '';
+    this.firebaseClass = new Firebase();
   }
 
   // get details for a specific location
-  async getDetailsPlace(name, idPlace){
+  async getDetailsPlace(name, id, place_id){
+    const db = this.firebaseClass.db;
     try{
+      const docRef = doc(db, "details_places", place_id);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        return {isResolved: true, ...data, id};
+      }
+
       const textPromptSystem =  `
         Task: Return information in JSON format about a given location, following this structure.
       `;
       const JsonSchema = z.object({
         response: z.object({
-          name: z.string().describe('The name provided in the input'),
-          id: z.string().describe('The ID provided in the input'),
           description: z.string().describe('A short description of the location, including historical details, no longer than 30 words'),
           info: z.string().describe('Key details about the location, including guidance on how to purchase tickets (excluding price information), no longer than 30 words'),
         })
       })
-      const textPromptUser =  `Location: {name: ${name} id: ${idPlace}}, From ${this.city}, ${this.country}`;
+      const textPromptUser =  `Location: {name: ${name}, From ${this.city}, ${this.country}`;
       const resultDetailsPlacesLlm = await this.LlmCallWithZodResponseFormat(textPromptSystem, textPromptUser, JsonSchema);
       if(!resultDetailsPlacesLlm.isResolved){
-        return this.getDetailsPlace(name, idPlace);
+        return this.getDetailsPlace(name, id, place_id);
       }
       let result = resultDetailsPlacesLlm.data;
-      const {description, id, info} = result;
-      return {isResolved: true, description, info, id};
+      setDoc(doc(db, "details_places", place_id), result)
+      return {isResolved: true, ...result, id};
     }catch(err){
       console.log(err);
       return {isResolved: false};
@@ -104,13 +113,13 @@ class ApiComplentionProgram extends OpenaiClient {
         return {name, address, dataTimeLocation, id: index}
       });
 
-      const nameIndexLocationsAr = this.locations.map((ob, index)=>{
-        return {name: ob.name, index}
+      const nameIndexLocationsAr = this.locations.map((location, index)=>{
+        return {name: location.name, index}
       });
 
       // for each location get details
-      const arrayPromisesDetails = this.locations.map((ob, index)=>{
-        return this.getDetailsPlace(ob.name, index);
+      const arrayPromisesDetails = this.locations.map((location, index)=>{
+        return this.getDetailsPlace(location.name, index, location.place_id);
       })
       const rezArrayPromisesDetails = await Promise.all(arrayPromisesDetails);
       rezArrayPromisesDetails.forEach((ob)=>{
