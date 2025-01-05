@@ -39,9 +39,9 @@ class ApiCompletionProgram extends OpenaiClient {
         })
       })
       const textPromptUser =  `Location: {name: ${name}, From ${this.city}, ${this.country}`;
-      const resultDetailsPlacesLlm = await this.LlmCompletionWithSchema(textPromptSystem, textPromptUser, JsonSchema);
+      const resultDetailsPlacesLlm = await this.retryLlmCallWithSchema(textPromptSystem, textPromptUser, JsonSchema);
       if(!resultDetailsPlacesLlm.isResolved){
-        return this.getDetailsPlace(name, id, place_id);
+        return {isResolved: false};
       }
       let result = resultDetailsPlacesLlm.data;
       setDoc(doc(db, "details_places", place_id), result)
@@ -91,9 +91,9 @@ class ApiCompletionProgram extends OpenaiClient {
           reason: z.string().describe('This should contain a reason only if isRespectingTheRules is false; otherwise, it can be an empty string.')
         })
       })
-      const resultEfficiencyProgramLlm = await this.LlmCompletionWithSchema(textPromptSystem, textPromptUser, JsonSchema);
+      const resultEfficiencyProgramLlm = await this.retryLlmCallWithSchema(textPromptSystem, textPromptUser, JsonSchema);
       if(!resultEfficiencyProgramLlm.isResolved){
-        return this.verifyEfficiencyProgram(program);
+        return {isResolved: false};
       }
       let result = resultEfficiencyProgramLlm.data;
       this.rejectionReasonForEfficiencyVerification += result.reason;
@@ -163,9 +163,9 @@ class ApiCompletionProgram extends OpenaiClient {
       });
 
       // create the program
-      const resultProgramLlm = await this.LlmCompletionWithSchema(textPromptSystem, textPromptUser, JsonSchema);
+      const resultProgramLlm = await this.retryLlmCallWithSchema(textPromptSystem, textPromptUser, JsonSchema);
       if(!resultProgramLlm.isResolved){
-        return this.createProgram();
+        return {isResolved: false, err: resultProgramLlm?.err};
       }
       let contentProgram = resultProgramLlm.data;
       const {program} = contentProgram;
@@ -273,9 +273,9 @@ class ApiCompletionProgram extends OpenaiClient {
       const textPromptUser = `This is the date: ${date}, and this is the itinerary I want to create in the format from the system role example above: ${JSON.stringify(activities)},
         for ${this.city}, ${this.country}.`;
 
-      const resultCompletionProgramDayLlm = await this.LlmCompletionWithSchema(textPromptSystem, textPromptUser, JsonSchema);
+      const resultCompletionProgramDayLlm = await this.retryLlmCallWithSchema(textPromptSystem, textPromptUser, JsonSchema);
       if(!resultCompletionProgramDayLlm.isResolved){
-        return this.completionProgramDay(date, activities, day);
+        return {isResolved: false, err: resultCompletionProgramDayLlm?.err};
       }
       let program = resultCompletionProgramDayLlm?.data?.program;
 
@@ -307,9 +307,9 @@ class ApiCompletionProgram extends OpenaiClient {
           isRespectingTheRules: z.boolean().describe('true / false')
         })
       })
-      const resultVerifyProgramDayLlm = await this.LlmCompletionWithSchema(textPromptSystem, textPromptUser, JsonSchema);
+      const resultVerifyProgramDayLlm = await this.retryLlmCallWithSchema(textPromptSystem, textPromptUser, JsonSchema);
       if(!resultVerifyProgramDayLlm.isResolved){
-        return this.verifyEfficiencyProgramDay(activities, program);
+        return {isResolved: false};
       }
       let result = resultVerifyProgramDayLlm.data;
       return {isResolved: true, data: result};

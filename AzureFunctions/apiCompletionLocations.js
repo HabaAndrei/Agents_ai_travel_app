@@ -141,9 +141,9 @@ class ApiCompletionLocations extends OpenaiClient {
         })
       });
 
-      const resultTimeToLocationLlm =  await this.LlmCompletionWithSchema(textPromptSystem, textPromptUser, JsonSchema);
+      const resultTimeToLocationLlm =  await this.retryLlmCallWithSchema(textPromptSystem, textPromptUser, JsonSchema);
       if(!resultTimeToLocationLlm.isResolved){
-        return this.visitPackages(place, index);
+        return {isResolved: false, err: resultTimeToLocationLlm?.err};;
       }
       let resultTour = resultTimeToLocationLlm?.data;
       return {isResolved: true, data: resultTour, index};
@@ -169,9 +169,9 @@ class ApiCompletionLocations extends OpenaiClient {
         })
       })
 
-      const resultVerifyLocations = await this.LlmCompletionWithSchema(textPromptSystem, textPromptUser, JsonSchema);
+      const resultVerifyLocations = await this.retryLlmCallWithSchema(textPromptSystem, textPromptUser, JsonSchema);
       if(!resultVerifyLocations.isResolved){
-        return this.verifyProximitylocations(locations, prompt);
+        return {isResolved: false};
       }
       let result = resultVerifyLocations.data;
       this.rejectionReasonForProximityVerification += result.reason;
@@ -218,9 +218,9 @@ class ApiCompletionLocations extends OpenaiClient {
       	})
       });
 
-      const resultLocationsLlm = await this.LlmCompletionWithSchema(textPromptSystem, textPromptUser, JsonSchema);
+      const resultLocationsLlm = await this.retryLlmCallWithSchema(textPromptSystem, textPromptUser, JsonSchema);
       if(!resultLocationsLlm.isResolved){
-        return this.getAllPlacesAboutLocations();
+        return {isResolved: false, err: resultLocationsLlm?.err };
       }
       let resultLocations = resultLocationsLlm.data;
 

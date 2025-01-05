@@ -4,11 +4,25 @@ const {API_KEY_OPENAI} = process.env;
 const openai_client = new OpenAI({ apiKey: API_KEY_OPENAI });
 const { zodResponseFormat } = require("openai/helpers/zod");
 
-
+// base class for particular instances of LLM clients
 class OpenaiClient {
 
+  async retryLlmCallWithSchema(systemPrompt, userPrompt, JsonSchema){
+    let count = 0;
+    let isResolved = false;
+    let result = '';
+    while(count < 3 && !isResolved){
+      count+=1;
+      if (count > 1) console.log('is calling retryLlmCallWithSchema', {count});
+      const data = await this.LlmCompletionWithSchema(systemPrompt, userPrompt, JsonSchema);
+      if (data.isResolved) isResolved = true;
+      result = data;
+    }
+    return result;
+  }
+
   // universal function to call open ai with zod response only
-  async LlmCompletionWithSchema(systemPrompt, userPrompt, Response){
+  async LlmCompletionWithSchema(systemPrompt, userPrompt, JsonSchema){
     try {
       const completion = await openai_client.chat.completions.create({
         messages: [{
@@ -19,7 +33,7 @@ class OpenaiClient {
           'content': userPrompt
         }],
         model: 'gpt-4o-mini',
-        response_format: zodResponseFormat(Response, "response"),
+        response_format: zodResponseFormat(JsonSchema, "response"),
         temperature: 0,
       });
 

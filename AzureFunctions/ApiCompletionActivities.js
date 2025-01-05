@@ -30,11 +30,11 @@ class ApiCompletionActivities extends OpenaiClient {
           })
         })
       })
-      const resultParamsAboutLocationLlm = await this.LlmCompletionWithSchema(textPromptSystem, textPromptUser, JsonSchema);
+      const resultParamsAboutLocationLlm = await this.retryLlmCallWithSchema(textPromptSystem, textPromptUser, JsonSchema);
 
       // If the request to OpenAI fails, I will call the function again
       if(!resultParamsAboutLocationLlm.isResolved){
-        return this.paramsAboutLocation();
+        return {isResolved: false, err: resultParamsAboutLocationLlm?.err};
       }
       return {isResolved: true, data: resultParamsAboutLocationLlm?.data?.data};
     }catch(err){
@@ -58,9 +58,9 @@ class ApiCompletionActivities extends OpenaiClient {
       });
 
       // create request to open ai to recive activities
-      const resultCreateActivitiesLlm = await this.LlmCompletionWithSchema(textPromptSystem, textPromptUser, JsonSchema);
+      const resultCreateActivitiesLlm = await this.retryLlmCallWithSchema(textPromptSystem, textPromptUser, JsonSchema);
       if(!resultCreateActivitiesLlm.isResolved){
-        return this.createActivities();
+        return {isResolved: false, err: resultCreateActivitiesLlm?.err};
       }
       let resultActivities = resultCreateActivitiesLlm.data;
 

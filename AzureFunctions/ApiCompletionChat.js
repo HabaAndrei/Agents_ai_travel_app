@@ -24,9 +24,9 @@ class ApiCompletionChat extends OpenaiClient {
           is_correct_question: z.boolean().describe('true / false')
         })
       })
-      const resultAcceptOrRejectQuestionLlm = await this.LlmCompletionWithSchema(textPromptSystem, textPromptUser, JsonSchema);
+      const resultAcceptOrRejectQuestionLlm = await this.retryLlmCallWithSchema(textPromptSystem, textPromptUser, JsonSchema);
       if(!resultAcceptOrRejectQuestionLlm.isResolved){
-        return this.acceptOrRejectQuestion(historyConv);
+        return {isResolved: false, err: resultAcceptOrRejectQuestionLlm?.err};
       }
       let resultContent = resultAcceptOrRejectQuestionLlm.data;
       const data = resultContent?.is_correct_question;
