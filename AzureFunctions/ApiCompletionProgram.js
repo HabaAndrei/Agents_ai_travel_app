@@ -22,6 +22,7 @@ class ApiCompletionProgram extends OpenaiClient {
   async getDetailsPlace(name, id, place_id){
     const db = this.firebaseInstance.db;
     try{
+      // If the place already exists in the database, I send the data from the database
       const docRef = doc(db, "details_places", place_id);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
@@ -29,6 +30,7 @@ class ApiCompletionProgram extends OpenaiClient {
         return {isResolved: true, ...data, id};
       }
 
+      // prompts and json schema
       const textPromptSystem =  `
         Task: Return information in JSON format about a given location, following this structure.
       `;
@@ -39,12 +41,16 @@ class ApiCompletionProgram extends OpenaiClient {
         })
       })
       const textPromptUser =  `Location: {name: ${name}, From ${this.city}, ${this.country}`;
+
+      // Create the request to OpenAI
       const resultDetailsPlacesLlm = await this.retryLlmCallWithSchema(textPromptSystem, textPromptUser, JsonSchema);
       if(!resultDetailsPlacesLlm.isResolved){
         return {isResolved: false};
       }
       let result = resultDetailsPlacesLlm.data;
+      // store data into db
       setDoc(doc(db, "details_places", place_id), result)
+      // send the result based on the information received.
       return {isResolved: true, ...result, id};
     }catch(err){
       console.log(err);
@@ -55,16 +61,22 @@ class ApiCompletionProgram extends OpenaiClient {
   // this function verifies if all places are included in program
   verifyExistenceOfLocationsFromProgram(locations, program){
     try{
+      // create an array with all activities (activities are like locations)
       let activities = [];
       program.forEach((dayValues)=>activities = activities.concat(dayValues.activities));
-      if(locations.length != activities.length)return {isResolved: true, existAllLocations: false}
+      // if the lengths are not the same return the result
+      if (locations.length != activities.length) return {isResolved: true, existAllLocations: false}
 
-      locations.forEach((location, i)=>{
+      // Verify if all locations are included based on the indexes of locations and the IDs of activities.
+      locations.forEach((location)=>{
         const {index} = location;
         const indexActivity = activities.findIndex((activity)=>activity.id === index);
         if (indexActivity < 0) return;
+        // get out the activity from array
         activities.splice(indexActivity, 1);
       })
+
+      // If the activities still exist, return the result.
       if(activities.length){
         return {isResolved: true, existAllLocations: false};
       }else{
@@ -79,6 +91,7 @@ class ApiCompletionProgram extends OpenaiClient {
   async verifyEfficiencyProgram(program){
     if (typeof program != 'string') program = JSON.stringify(program);
     try {
+      // prompts and json schema
       this.countVerificationEfficiencyProgram += 1;
       const textPromptSystem =  `
         Task: Your task is to check if the locations are grouped by days based on their proximity.
@@ -91,11 +104,13 @@ class ApiCompletionProgram extends OpenaiClient {
           reason: z.string().describe('This should contain a reason only if isRespectingTheRules is false; otherwise, it can be an empty string.')
         })
       })
+      // Create the request to OpenAI and send the result based on the information received.
       const resultEfficiencyProgramLlm = await this.retryLlmCallWithSchema(textPromptSystem, textPromptUser, JsonSchema);
       if(!resultEfficiencyProgramLlm.isResolved){
         return {isResolved: false};
       }
       let result = resultEfficiencyProgramLlm.data;
+      // Store the reason to create the best prompt for the next call if the result is falsy.
       this.rejectionReasonForEfficiencyVerification += result.reason;
       console.log(this.rejectionReasonForEfficiencyVerification, '   rejectionReasonForEfficiencyVerification');
       return {isResolved: true, data: result.isRespectingTheRules};
@@ -108,11 +123,13 @@ class ApiCompletionProgram extends OpenaiClient {
   async createProgram(){
     try{
 
+      // array of locations with name, address and dataTimeLocation
       const nameIndexAddressLocationsAr = this.locations.map((ob, index)=>{
         const {name, address, dataTimeLocation} = ob;
         return {name, address, dataTimeLocation, id: index}
       });
 
+      // array of locations with name and index
       const nameIndexLocationsAr = this.locations.map((location, index)=>{
         return {name: location.name, index}
       });
@@ -122,12 +139,14 @@ class ApiCompletionProgram extends OpenaiClient {
         return this.getDetailsPlace(location.name, index, location.place_id);
       })
       const rezArrayPromisesDetails = await Promise.all(arrayPromisesDetails);
+      // populate the main locations with details like description and info
       rezArrayPromisesDetails.forEach((ob)=>{
         if(!ob.isResolved)return;
         this.locations[ob.id].description = ob.description;
         this.locations[ob.id].info = ob.info;
       })
 
+      // prompts and json schem to create the program
       const nameIndexAddressLocationsArString = JSON.stringify(nameIndexAddressLocationsAr);
       const textPromptSystem = `
       \n Objective: You are the best at creating a daily itinerary based on a provided date range and list of locations.
@@ -170,6 +189,7 @@ class ApiCompletionProgram extends OpenaiClient {
       let contentProgram = resultProgramLlm.data;
       const {program} = contentProgram;
 
+      // verify if exist all locations in program
       const verificationExistenceOfLocationsFromProgram = this.verifyExistenceOfLocationsFromProgram(nameIndexLocationsAr, program);
       const {isResolved, existAllLocations} = verificationExistenceOfLocationsFromProgram
       if(isResolved && !existAllLocations){
@@ -181,6 +201,7 @@ class ApiCompletionProgram extends OpenaiClient {
       const verificationEfficiencyProgram = await this.verifyEfficiencyProgram(program)
       console.log({verificationEfficiencyProgram})
       console.log(verificationEfficiencyProgram.data, ' isRespectingTheRulesEfficiencyProgram')
+      // If the program's efficiency is not good, call the function again, but no more than twice.
       if(verificationEfficiencyProgram?.isResolved && !verificationEfficiencyProgram?.data && this.countVerificationEfficiencyProgram < 3){
         console.log('is executing again: ', this.countVerificationEfficiencyProgram);
         return this.createProgram();
@@ -207,8 +228,11 @@ class ApiCompletionProgram extends OpenaiClient {
         dataFromRezPromisesProgramDay.push(ob.data);
       })
 
+      // For each day of data (where I structure the activities per day).
       for(let day of dataFromRezPromisesProgramDay){
+        // for each activity of day
         for(let activity of day.activities){
+          // Populate each activity with all the details about it.
           const {address, urlLocation, geometry_location, place_id, website, arrayWithLinkImages, dataTimeLocation, description, info}  = this.locations[activity.id];
           activity.address = address ? address : '';
           activity.urlLocation = urlLocation ? urlLocation : '';
@@ -222,25 +246,25 @@ class ApiCompletionProgram extends OpenaiClient {
         }
       }
 
+      // Update the day for each day of the main program.
       for(let day of program){
         const activities = dataFromRezPromisesProgramDay.find((ob)=>{
           if(ob.day === day.day)return ob.activities;
         })
         day.activities = activities.activities;
       }
-
-      this.rezFinal = {isResolved: true, data: program};
-      return this.rezFinal
+      // send the result to client
+      return {isResolved: true, data: program};
     }catch(err){
       console.log('err at create Program', err);
-      this.rezFinal = {isResolved: false, err: err?.message};
-      return this.rezFinal
+      return {isResolved: false, err: err?.message};
     }
   }
 
   // order location for each day
   async completionProgramDay(date, activities, day){
     try{
+      // prompts and json schema
       let textPromptSystem = '';
       if(activities.length === 1){
         textPromptSystem = `
@@ -287,6 +311,7 @@ class ApiCompletionProgram extends OpenaiClient {
       // verify efficiency of program
       const resultVerifyProgramDay = await this.verifyEfficiencyProgramDay(program);
       const isRespectingTheRulesEfficiencyProgramDay = resultVerifyProgramDay.data.isRespectingTheRules;
+      // If the result doesn't respect the rules, call the function again.
       if(resultVerifyProgramDay?.isResolved && !isRespectingTheRulesEfficiencyProgramDay){
         return this.completionProgramDay(date, activities, day);
       }
@@ -300,6 +325,7 @@ class ApiCompletionProgram extends OpenaiClient {
 
   async verifyEfficiencyProgramDay(program){
     try{
+      // prompts and json schema
       const textPromptSystem = `Task: Your task is to verify whether the day program is efficient and avoids returning to the same place multiple times.`;
       const textPromptUser = 'Verify this program: ' + JSON.stringify(program);
       const JsonSchema = z.object({

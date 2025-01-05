@@ -13,6 +13,7 @@ class ApiCompletionActivities extends OpenaiClient {
   // get specific parameter for location
   async paramsAboutLocation(){
     try{
+      // prompts and json schema
       const textPromptSystem = `
         \n Task: You are an expert in location approximation. Your task is to receive a location and return two pieces of information in JSON format.
         \n Task desctiption:
@@ -30,9 +31,8 @@ class ApiCompletionActivities extends OpenaiClient {
           })
         })
       })
+      // Create the request to OpenAI and send the result based on the information received.
       const resultParamsAboutLocationLlm = await this.retryLlmCallWithSchema(textPromptSystem, textPromptUser, JsonSchema);
-
-      // If the request to OpenAI fails, I will call the function again
       if(!resultParamsAboutLocationLlm.isResolved){
         return {isResolved: false, err: resultParamsAboutLocationLlm?.err};
       }
@@ -42,8 +42,10 @@ class ApiCompletionActivities extends OpenaiClient {
     }
   }
 
+  // this function create activities based on the location recived
   async createActivities(){
     try{
+      // prompts and json schema
       const textPromptSystem = `
         \n Task: You receive a location as input and return a JSON with various activities available in that location, specific in that location.
           For each activity, there should be locations where it can be done. If the location is not in that area, do not include that activity.
