@@ -7,7 +7,7 @@ const  z = require("zod");
 const OpenaiClient = require('./OpenaiClient');
 const Firebase = require('./Firebase');
 
-class ApiComplentionLocations extends OpenaiClient {
+class ApiCompletionLocations extends OpenaiClient {
 
   constructor(objectWithVariables){
     super();
@@ -20,7 +20,7 @@ class ApiComplentionLocations extends OpenaiClient {
     this.scaleVisit = scaleVisit;
     this.countVerifyLocations = 0;
     this.rejectionReasonForProximityVerification = '';
-    this.firebaseClass = new Firebase();
+    this.firebaseInstance = new Firebase();
   }
 
   returnUniqueValesFromArray(array){
@@ -48,7 +48,7 @@ class ApiComplentionLocations extends OpenaiClient {
 
   // This function retrieves location details from the Google Maps API
   async locationDetailsFromGoogleApi(place, description, indexPlace){
-    const db = this.firebaseClass.db;
+    const db = this.firebaseInstance.db;
     let rezFin = {isResolved: true, data: '', index: indexPlace}
     try{
       const locationName = place.replace(' ', '%20')
@@ -141,7 +141,7 @@ class ApiComplentionLocations extends OpenaiClient {
         })
       });
 
-      const resultTimeToLocationLlm =  await this.LlmCallWithZodResponseFormat(textPromptSystem, textPromptUser, JsonSchema);
+      const resultTimeToLocationLlm =  await this.LlmCompletionWithSchema(textPromptSystem, textPromptUser, JsonSchema);
       if(!resultTimeToLocationLlm.isResolved){
         return this.visitPackages(place, index);
       }
@@ -169,7 +169,7 @@ class ApiComplentionLocations extends OpenaiClient {
         })
       })
 
-      const resultVerifyLocations = await this.LlmCallWithZodResponseFormat(textPromptSystem, textPromptUser, JsonSchema);
+      const resultVerifyLocations = await this.LlmCompletionWithSchema(textPromptSystem, textPromptUser, JsonSchema);
       if(!resultVerifyLocations.isResolved){
         return this.verifyProximitylocations(locations, prompt);
       }
@@ -218,7 +218,7 @@ class ApiComplentionLocations extends OpenaiClient {
       	})
       });
 
-      const resultLocationsLlm = await this.LlmCallWithZodResponseFormat(textPromptSystem, textPromptUser, JsonSchema);
+      const resultLocationsLlm = await this.LlmCompletionWithSchema(textPromptSystem, textPromptUser, JsonSchema);
       if(!resultLocationsLlm.isResolved){
         return this.getAllPlacesAboutLocations();
       }
@@ -291,4 +291,4 @@ class ApiComplentionLocations extends OpenaiClient {
 
 }
 
-module.exports = { ApiComplentionLocations }
+module.exports = { ApiCompletionLocations }

@@ -1,7 +1,7 @@
 const  z = require("zod");
 const OpenaiClient = require('./OpenaiClient');
 
-class ApiComplentionChat extends OpenaiClient {
+class ApiCompletionChat extends OpenaiClient {
 
   constructor(objectWithVariables){
     super();
@@ -24,7 +24,7 @@ class ApiComplentionChat extends OpenaiClient {
           is_correct_question: z.boolean().describe('true / false')
         })
       })
-      const resultAcceptOrRejectQuestionLlm = await this.LlmCallWithZodResponseFormat(textPromptSystem, textPromptUser, JsonSchema);
+      const resultAcceptOrRejectQuestionLlm = await this.LlmCompletionWithSchema(textPromptSystem, textPromptUser, JsonSchema);
       if(!resultAcceptOrRejectQuestionLlm.isResolved){
         return this.acceptOrRejectQuestion(historyConv);
       }
@@ -96,7 +96,7 @@ class ApiComplentionChat extends OpenaiClient {
         return  {isResolved: true, data: "Information not available."}
       }
 
-      const rez = await this.LlmCallCompletion(messages);
+      const rez = await this.LlmCallChat(messages);
       if(!rez.isResolved) return {isResolved: true, data: "Information not available."}
       return {isResolved: true, data: rez.data}
     }catch(err){
@@ -105,4 +105,4 @@ class ApiComplentionChat extends OpenaiClient {
   }
 }
 
-module.exports = { ApiComplentionChat }
+module.exports = { ApiCompletionChat }

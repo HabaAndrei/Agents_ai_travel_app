@@ -3,7 +3,7 @@ const Firebase = require('./Firebase');
 const  z = require("zod");
 const {setDoc, getDoc, doc} = require("firebase/firestore");
 
-class ApiComplentionProgram extends OpenaiClient {
+class ApiCompletionProgram extends OpenaiClient {
 
   constructor(objectWithVariables){
     super();
@@ -15,12 +15,12 @@ class ApiComplentionProgram extends OpenaiClient {
     this.locations = locations;
     this.countVerificationEfficiencyProgram = 0;
     this.rejectionReasonForEfficiencyVerification = '';
-    this.firebaseClass = new Firebase();
+    this.firebaseInstance = new Firebase();
   }
 
   // get details for a specific location
   async getDetailsPlace(name, id, place_id){
-    const db = this.firebaseClass.db;
+    const db = this.firebaseInstance.db;
     try{
       const docRef = doc(db, "details_places", place_id);
       const docSnap = await getDoc(docRef);
@@ -39,7 +39,7 @@ class ApiComplentionProgram extends OpenaiClient {
         })
       })
       const textPromptUser =  `Location: {name: ${name}, From ${this.city}, ${this.country}`;
-      const resultDetailsPlacesLlm = await this.LlmCallWithZodResponseFormat(textPromptSystem, textPromptUser, JsonSchema);
+      const resultDetailsPlacesLlm = await this.LlmCompletionWithSchema(textPromptSystem, textPromptUser, JsonSchema);
       if(!resultDetailsPlacesLlm.isResolved){
         return this.getDetailsPlace(name, id, place_id);
       }
@@ -91,7 +91,7 @@ class ApiComplentionProgram extends OpenaiClient {
           reason: z.string().describe('This should contain a reason only if isRespectingTheRules is false; otherwise, it can be an empty string.')
         })
       })
-      const resultEfficiencyProgramLlm = await this.LlmCallWithZodResponseFormat(textPromptSystem, textPromptUser, JsonSchema);
+      const resultEfficiencyProgramLlm = await this.LlmCompletionWithSchema(textPromptSystem, textPromptUser, JsonSchema);
       if(!resultEfficiencyProgramLlm.isResolved){
         return this.verifyEfficiencyProgram(program);
       }
@@ -163,7 +163,7 @@ class ApiComplentionProgram extends OpenaiClient {
       });
 
       // create the program
-      const resultProgramLlm = await this.LlmCallWithZodResponseFormat(textPromptSystem, textPromptUser, JsonSchema);
+      const resultProgramLlm = await this.LlmCompletionWithSchema(textPromptSystem, textPromptUser, JsonSchema);
       if(!resultProgramLlm.isResolved){
         return this.createProgram();
       }
@@ -273,7 +273,7 @@ class ApiComplentionProgram extends OpenaiClient {
       const textPromptUser = `This is the date: ${date}, and this is the itinerary I want to create in the format from the system role example above: ${JSON.stringify(activities)},
         for ${this.city}, ${this.country}.`;
 
-      const resultCompletionProgramDayLlm = await this.LlmCallWithZodResponseFormat(textPromptSystem, textPromptUser, JsonSchema);
+      const resultCompletionProgramDayLlm = await this.LlmCompletionWithSchema(textPromptSystem, textPromptUser, JsonSchema);
       if(!resultCompletionProgramDayLlm.isResolved){
         return this.completionProgramDay(date, activities, day);
       }
@@ -307,7 +307,7 @@ class ApiComplentionProgram extends OpenaiClient {
           isRespectingTheRules: z.boolean().describe('true / false')
         })
       })
-      const resultVerifyProgramDayLlm = await this.LlmCallWithZodResponseFormat(textPromptSystem, textPromptUser, JsonSchema);
+      const resultVerifyProgramDayLlm = await this.LlmCompletionWithSchema(textPromptSystem, textPromptUser, JsonSchema);
       if(!resultVerifyProgramDayLlm.isResolved){
         return this.verifyEfficiencyProgramDay(activities, program);
       }
@@ -320,4 +320,4 @@ class ApiComplentionProgram extends OpenaiClient {
 
 }
 
-module.exports = { ApiComplentionProgram }
+module.exports = { ApiCompletionProgram }

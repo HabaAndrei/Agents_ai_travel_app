@@ -1,7 +1,7 @@
 const  z = require("zod");
 const OpenaiClient = require('./OpenaiClient');
 
-class ApiComplentionActivities extends OpenaiClient {
+class ApiCompletionActivities extends OpenaiClient {
 
   constructor(objectWithVariables){
     super();
@@ -30,7 +30,7 @@ class ApiComplentionActivities extends OpenaiClient {
           })
         })
       })
-      const resultParamsAboutLocationLlm = await this.LlmCallWithZodResponseFormat(textPromptSystem, textPromptUser, JsonSchema);
+      const resultParamsAboutLocationLlm = await this.LlmCompletionWithSchema(textPromptSystem, textPromptUser, JsonSchema);
 
       // If the request to OpenAI fails, I will call the function again
       if(!resultParamsAboutLocationLlm.isResolved){
@@ -58,7 +58,7 @@ class ApiComplentionActivities extends OpenaiClient {
       });
 
       // create request to open ai to recive activities
-      const resultCreateActivitiesLlm = await this.LlmCallWithZodResponseFormat(textPromptSystem, textPromptUser, JsonSchema);
+      const resultCreateActivitiesLlm = await this.LlmCompletionWithSchema(textPromptSystem, textPromptUser, JsonSchema);
       if(!resultCreateActivitiesLlm.isResolved){
         return this.createActivities();
       }
@@ -73,4 +73,4 @@ class ApiComplentionActivities extends OpenaiClient {
   }
 }
 
-module.exports = { ApiComplentionActivities }
+module.exports = { ApiCompletionActivities }

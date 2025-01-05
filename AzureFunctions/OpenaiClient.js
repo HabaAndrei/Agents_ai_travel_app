@@ -1,16 +1,16 @@
 require('dotenv').config();
 const  OpenAI = require('openai');
 const {API_KEY_OPENAI} = process.env;
-const openai = new OpenAI({ apiKey: API_KEY_OPENAI });
+const openai_client = new OpenAI({ apiKey: API_KEY_OPENAI });
 const { zodResponseFormat } = require("openai/helpers/zod");
-const  z = require("zod");
+
 
 class OpenaiClient {
 
   // universal function to call open ai with zod response only
-  async LlmCallWithZodResponseFormat(systemPrompt, userPrompt, Response){
+  async LlmCompletionWithSchema(systemPrompt, userPrompt, Response){
     try {
-      const completion = await openai.chat.completions.create({
+      const completion = await openai_client.chat.completions.create({
         messages: [{
           role: 'system', content:  systemPrompt
         },
@@ -32,9 +32,9 @@ class OpenaiClient {
     }
   }
 
-  async LlmCallCompletion(messages){
+  async LlmCallChat(messages){
     try {
-      const completion = await openai.chat.completions.create({
+      const completion = await openai_client.chat.completions.create({
         messages: messages,
         model: 'gpt-4o-mini',
         temperature: 0,
