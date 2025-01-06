@@ -5,6 +5,7 @@ const {ApiCompletionProgram} = require('./AzureFunctions/ApiCompletionProgram.js
 const {ApiCompletionChat} = require('./AzureFunctions/ApiCompletionChat.js');
 const {ApiCompletionLocations} = require('./AzureFunctions/ApiCompletionLocations.js');
 const {ApiCompletionActivities} = require('./AzureFunctions/ApiCompletionActivities.js');
+const { searchDestination } = require('./AzureFunctions/searchDestination.js')
 app.use(cors());
 app.use(express.json());
 
@@ -16,7 +17,8 @@ app.post('/apiCallAi', async (req, res)=>{
   let rezFinal = '';
 
   const {from, to, city, country, locations, input, checkbox, isLocalPlaces,
-    scaleVisit, histoyConv, information} = req.body;
+    scaleVisit, histoyConv, information, value} = req.body;
+
 
   if(method === 'createProgram'){
     const api = new ApiCompletionProgram({from, to, city, country, locations});
@@ -40,6 +42,10 @@ app.post('/apiCallAi', async (req, res)=>{
     const api = new ApiCompletionChat({histoyConv, information});
     const result = await api.responseQuestion();
     rezFinal = result;
+  }
+
+  if(method === 'searchDestination'){
+    rezFinal = searchDestination(input, country, value);
   }
 
   res.send(rezFinal);
