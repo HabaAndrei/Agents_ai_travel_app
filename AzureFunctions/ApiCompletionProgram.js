@@ -199,7 +199,6 @@ class ApiCompletionProgram extends OpenaiClient {
 
       // verify efficiency of program
       const verificationEfficiencyProgram = await this.verifyEfficiencyProgram(program)
-      console.log({verificationEfficiencyProgram})
       console.log(verificationEfficiencyProgram.data, ' isRespectingTheRulesEfficiencyProgram')
       // If the program's efficiency is not good, call the function again, but no more than twice.
       if(verificationEfficiencyProgram?.isResolved && !verificationEfficiencyProgram?.data && this.countVerificationEfficiencyProgram < 3){

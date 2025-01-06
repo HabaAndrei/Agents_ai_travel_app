@@ -19,35 +19,32 @@ app.post('/apiCallAi', async (req, res)=>{
   const {from, to, city, country, locations, input, checkbox, isLocalPlaces,
     scaleVisit, histoyConv, information, value} = req.body;
 
-
-  if(method === 'createProgram'){
-    const api = new ApiCompletionProgram({from, to, city, country, locations});
-    const result = await api.createProgram();
-    rezFinal = result;
+  switch (method) {
+    case ('createProgram') : {
+      const api = new ApiCompletionProgram({from, to, city, country, locations});
+      rezFinal = await api.createProgram();
+      break;
+    }
+    case ('seeAllPlaces') : {
+      const api = new ApiCompletionLocations({city, country, input, checkbox, isLocalPlaces, scaleVisit});
+      rezFinal = await api.getAllPlacesAboutLocations();
+      break;
+    }
+    case ('createActivities') : {
+      const api = new ApiCompletionActivities({city, country});
+      rezFinal = await api.createActivities();
+      break;
+    }
+    case ('chat') : {
+      const api = new ApiCompletionChat({histoyConv, information});
+      rezFinal = await api.responseQuestion();
+      break;
+    }
+    case ('searchDestination') : {
+      rezFinal = searchDestination(input, country, value);
+      break;
+    }
   }
-
-  if(method === 'seeAllPlaces'){
-    const api = new ApiCompletionLocations({city, country, input, checkbox, isLocalPlaces, scaleVisit});
-    const result = await api.getAllPlacesAboutLocations();
-    rezFinal = result;
-  }
-
-  if(method === 'createActivities'){
-    const api = new ApiCompletionActivities({city, country});
-    const result = await api.createActivities();
-    rezFinal = result;
-  }
-
-  if(method === 'chat'){
-    const api = new ApiCompletionChat({histoyConv, information});
-    const result = await api.responseQuestion();
-    rezFinal = result;
-  }
-
-  if(method === 'searchDestination'){
-    rezFinal = searchDestination(input, country, value);
-  }
-
   res.send(rezFinal);
 })
 

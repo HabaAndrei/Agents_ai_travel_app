@@ -52,8 +52,8 @@ class ApiCompletionLocations extends OpenaiClient {
     const db = this.firebaseInstance.db;
     try{
       // create the url based on the api specification
-      const locationName = place.replace(' ', '%20')
-      const input = [locationName, 'City:', this.city, 'Country:', this.country, description].join('%20');
+      const locationName = place.replaceAll(' ', '%20')
+      const input = [locationName, description, 'City:', this.city, 'Country:', this.country].join('%20');
       const addressAndIdPlace = await axios.post('https://maps.googleapis.com/maps/api/place/findplacefromtext/json?fields=formatted_address%2Cplace_id&input=' + input + '&inputtype=textquery&key=' + apiKeyGoogleMaps);
       // verify to exist the location and get the place id
       if(!addressAndIdPlace?.data?.candidates?.[0]){
