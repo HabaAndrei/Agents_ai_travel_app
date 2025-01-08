@@ -48,13 +48,13 @@ class ApiCompletionLocations extends OpenaiClient {
   }
 
   // This function retrieves location details from the Google Maps API
-  async locationDetailsFromGoogleApi(place, description, indexPlace){
+  async locationDetailsFromGoogleApi({place, aliasLocation, description, indexPlace}){
     const db = this.firebaseInstance.db;
     try{
       // create the url based on the api specification
-      const locationName = place.replaceAll(' ', '%20')
-      const input = [locationName, description, 'City:', this.city, 'Country:', this.country].join('%20');
-      const addressAndIdPlace = await axios.post('https://maps.googleapis.com/maps/api/place/findplacefromtext/json?fields=formatted_address%2Cplace_id&input=' + input + '&inputtype=textquery&key=' + apiKeyGoogleMaps);
+      const input = [place, description, 'like', aliasLocation, 'City:', this.city, 'Country:', this.country].join('%20');
+      const requestFormat = input.replaceAll(' ', '%20');
+      const addressAndIdPlace = await axios.post('https://maps.googleapis.com/maps/api/place/findplacefromtext/json?fields=formatted_address%2Cplace_id&input=' + requestFormat + '&inputtype=textquery&key=' + apiKeyGoogleMaps);
       // verify to exist the location and get the place id
       if(!addressAndIdPlace?.data?.candidates?.[0]){
         console.log(`Place: ${place} => value: addressAndIdPlace?.data?.candidates?.[0] from function locationDetailsFromGoogleApi is undefined`);
@@ -132,7 +132,7 @@ class ApiCompletionLocations extends OpenaiClient {
       const textPromptUser = `Place: ${place} from ${this.city}, ${this.country}`;
 
       const Packages = z.object({
-        name: z.string().describe('Maxim 5 words'),
+        package_description: z.string().describe('Maxim two sentences'),
         average_visiting_hours: z.number(),
         selected: z.boolean().describe('allways false')
       })
@@ -252,8 +252,8 @@ class ApiCompletionLocations extends OpenaiClient {
 
       // get details for each location
       const arrayWithCalls = arWithNameAliasDescription.map((objectNameAlias, index)=>{
-        const {alias, description} = objectNameAlias;
-        return this.locationDetailsFromGoogleApi(alias, description, index);
+        const {alias, description, name} = objectNameAlias;
+        return this.locationDetailsFromGoogleApi({place: name, aliasLocation: alias, description, indexPlace: index});
       })
       const dataFromGoogleCalls = await Promise.all(arrayWithCalls);
 
