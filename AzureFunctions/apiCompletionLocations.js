@@ -23,6 +23,44 @@ class ApiCompletionLocations extends OpenaiClient {
     this.firebaseInstance = new Firebase();
   }
 
+  // get image of the city
+  async getUrlImageCity(city, country){
+    try{
+      const db = this.firebaseInstance.db;
+      const location = [city, country].join(' ');
+
+      // verify if exist in database
+      const docRef = doc(db, "image_places", location);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        return {isResolved: true, url: data.url};
+      }
+
+      // call google api to get the image
+      const requestFormat = location.replaceAll(' ', '%20');
+      // get id o the place
+      const data = await axios.post('https://maps.googleapis.com/maps/api/place/findplacefromtext/json?fields=place_id&input=' + requestFormat + '&inputtype=textquery&key=' + apiKeyGoogleMaps);
+      const place_id = data?.data?.candidates?.[0]?.place_id;
+      if ( !place_id ) return {'isResolved': false};
+      // get image's reference
+      const detailsPlace = await axios.post('https://maps.googleapis.com/maps/api/place/details/json?fields=photos&place_id=' + place_id +'&key=' + apiKeyGoogleMaps);
+      const reference = detailsPlace?.data?.result?.photos?.[0]?.photo_reference;
+      // get image url
+      const resultUrl = await this.returnImgLink(reference);
+      if (!resultUrl.isResolved) return {'isResolved': false};;
+      // store the url in database
+      if (resultUrl.url) {
+        if(place_id)setDoc(doc(db, "image_places", location), {url: resultUrl.url});
+        return {'isResolved': true, url: resultUrl.url};
+      }else{
+        return {'isResolved': false}
+      }
+    }catch(err){
+      return {'isResolved': false}
+    }
+  }
+
   // Return an array without duplicate values, verifying only the 'name' and 'alias' properties.
   returnUniqueValesFromArray(array){
     let newAr = [];
@@ -270,8 +308,12 @@ class ApiCompletionLocations extends OpenaiClient {
         return !ob?.isResolved ? {} : {...ob?.data};
       };
 
+      // get url image of the city
+      const responseImageCity =  await this.getUrlImageCity(this.city, this.country);
+      const urlImageCity = responseImageCity?.url;
+
       // associate details from google api with locations and create the response
-      let arrayWithAllData = [];
+      let arrayWithAllLocations = [];
       for(let details of dataFromGoogleCalls){
         if(!details.isResolved)continue;
         const {location, place_id, arrayProgramPlace, arrayWithLinkImages, address,
@@ -279,7 +321,7 @@ class ApiCompletionLocations extends OpenaiClient {
         const index_ = details.index;
         const dataTimeLocation = findVisitPackagesLocation(index_);
         const name = arWithNameAliasDescription?.[index_]?.name;
-        arrayWithAllData.push(
+        arrayWithAllLocations.push(
           {
             name: name || '',
             address : address || '',
@@ -294,7 +336,7 @@ class ApiCompletionLocations extends OpenaiClient {
           }
         )
       }
-      return {isResolved: true, data: arrayWithAllData};
+      return {isResolved: true, data: arrayWithAllLocations, urlImageCity: urlImageCity || ''};
     }catch(err){
       console.log('error at getAllPlacesAboutLocations', err)
       return {isResolved: false, err: err?.message};
