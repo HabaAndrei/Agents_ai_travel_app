@@ -149,7 +149,7 @@ class ApiCompletionProgram extends OpenaiClient {
 
       // prompts and json schem to create the program
       const nameIndexAddressLocationsArString = JSON.stringify(nameIndexAddressLocationsAr);
-      const textPromptSystem = `
+      let textPromptSystem = `
       \n Objective: You are the best at creating a daily itinerary based on a provided date range and list of locations.
       \n Task: The main task is to group the location daily to be closer to each other, the visit should be very efficient,
         in order not to return to the same place several times.
@@ -161,7 +161,7 @@ class ApiCompletionProgram extends OpenaiClient {
         textPromptSystem += `\n Notice: This is the reason why the result wasn t good last time: ${this.rejectionReasonForEfficiencyVerification}.
         \n <<<<<  Don t repet the same mistakes >>>>> `;
       }
-      const textPromptUser = `
+      let textPromptUser = `
         This is an array of objects with their IDs << ${nameIndexAddressLocationsArString} >>
         The itinerary should be from the dates ${this.from} to ${this.to}, for ${this.city}, ${this.country}.
       `;
@@ -250,9 +250,9 @@ class ApiCompletionProgram extends OpenaiClient {
       // Update the day for each day of the main program.
       for(let day of program){
         const activities = dataFromRezPromisesProgramDay.find((ob)=>{
-          if(ob.day === day.day)return ob.activities;
+          if(ob.day === day.day)return ob?.activities;
         })
-        day.activities = activities.activities;
+        day.activities = activities?.activities;
       }
       // send the result to client
       return {isResolved: true, data: program};
@@ -295,7 +295,7 @@ class ApiCompletionProgram extends OpenaiClient {
           )
         })
       })
-      const textPromptUser = `This is the date: ${date}, and this is the itinerary I want to create in the format from the system role example above: ${JSON.stringify(activities)},
+      let textPromptUser = `This is the date: ${date}, and this is the itinerary I want to create in the format from the system role example above: ${JSON.stringify(activities)},
         for ${this.city}, ${this.country}.`;
       if ( this.hotelAddress ) textPromptUser += `This is the hotel's address: ${this.hotelAddress}`;
 

@@ -245,7 +245,7 @@ class ApiCompletionLocations extends OpenaiClient {
       ` : '';
 
       let textPromptSystem = `
-        \n Task: Your goal is to return a list of places to visit based on a given location and a list of [Activities].
+        \n Task: Your goal is to return a list of places I can visit as a tourist, based on a given location and a list of [activities].
           The locations must not be repeated.  ${numberOfPlacesPrompt}
         \n Attention: Ensure the locations provided match the given category of interest: ${categories}. ${requirememtPrompt}
         \n Verification: Ensure that every activity has at least one associated location.

@@ -47,7 +47,7 @@ class ApiCompletionActivities extends OpenaiClient {
     try{
       // prompts and json schema
       const textPromptSystem = `
-        \n Task: You receive a location as input and return a JSON with various activities available in that location, specific in that location.
+        \n Task: You receive a location as input and return a JSON with various activities available for tourists to do, specific to that location.
           For each activity, there should be locations where it can be done. If the location is not in that area, do not include that activity.
           Generate only activities that are specific to that location, not from the surrounding areas
         \n Note: Answer as general as possible, not specic, let it be like a category.
