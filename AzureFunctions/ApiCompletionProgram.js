@@ -7,12 +7,13 @@ class ApiCompletionProgram extends OpenaiClient {
 
   constructor(objectWithVariables){
     super();
-    const {from, to, city, country, locations} = objectWithVariables;
+    const {from, to, city, country, locations, hotelAddress} = objectWithVariables;
     this.from = from;
     this.to = to;
     this.city = city;
     this.country = country;
     this.locations = locations;
+    this.hotelAddress = hotelAddress;
     this.countVerificationEfficiencyProgram = 0;
     this.rejectionReasonForEfficiencyVerification = '';
     this.firebaseInstance = new Firebase();
@@ -164,6 +165,7 @@ class ApiCompletionProgram extends OpenaiClient {
         This is an array of objects with their IDs << ${nameIndexAddressLocationsArString} >>
         The itinerary should be from the dates ${this.from} to ${this.to}, for ${this.city}, ${this.country}.
       `;
+      if ( this.hotelAddress ) textPromptUser += `This is the hotel's address: ${this.hotelAddress}`;
 
       const   Activities = z.object({
         place: z.string().describe('The name of the place e.g. "The Palm Dubai"'),
@@ -295,6 +297,7 @@ class ApiCompletionProgram extends OpenaiClient {
       })
       const textPromptUser = `This is the date: ${date}, and this is the itinerary I want to create in the format from the system role example above: ${JSON.stringify(activities)},
         for ${this.city}, ${this.country}.`;
+      if ( this.hotelAddress ) textPromptUser += `This is the hotel's address: ${this.hotelAddress}`;
 
       const resultCompletionProgramDayLlm = await this.retryLlmCallWithSchema(textPromptSystem, textPromptUser, JsonSchema);
       if(!resultCompletionProgramDayLlm.isResolved){

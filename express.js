@@ -17,11 +17,11 @@ app.post('/apiCallAi', async (req, res)=>{
   let rezFinal = '';
 
   const {from, to, city, country, locations, input, checkbox, isLocalPlaces,
-    scaleVisit, histoyConv, information, value} = req.body;
+    scaleVisit, histoyConv, information, value, hotelAddress} = req.body;
 
   switch (method) {
     case ('createProgram') : {
-      const api = new ApiCompletionProgram({from, to, city, country, locations});
+      const api = new ApiCompletionProgram({from, to, city, country, locations, hotelAddress});
       rezFinal = await api.createProgram();
       break;
     }
