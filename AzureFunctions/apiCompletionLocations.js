@@ -9,9 +9,9 @@ const Firebase = require('./Firebase');
 
 class ApiCompletionLocations extends OpenaiClient {
 
-  constructor(objectWithVariables){
+  constructor(oo){
     super();
-    const {city, country, input, checkbox, isLocalPlaces, scaleVisit} = objectWithVariables;
+    const {city, country, input, checkbox, isLocalPlaces, scaleVisit} = oo;
     this.city = city;
     this.country = country;
     this.input = input;

@@ -5,9 +5,9 @@ const {setDoc, getDoc, doc} = require("firebase/firestore");
 
 class ApiCompletionProgram extends OpenaiClient {
 
-  constructor(objectWithVariables){
+  constructor(oo){
     super();
-    const {from, to, city, country, locations, hotelAddress} = objectWithVariables;
+    const {from, to, city, country, locations, hotelAddress} = oo;
     this.from = from;
     this.to = to;
     this.city = city;

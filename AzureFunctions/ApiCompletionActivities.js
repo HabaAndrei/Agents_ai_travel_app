@@ -3,9 +3,9 @@ const OpenaiClient = require('./OpenaiClient');
 
 class ApiCompletionActivities extends OpenaiClient {
 
-  constructor(objectWithVariables){
+  constructor(oo){
     super();
-    const {city, country} = objectWithVariables;
+    const {city, country} = oo;
     this.city = city;
     this.country = country;
   }

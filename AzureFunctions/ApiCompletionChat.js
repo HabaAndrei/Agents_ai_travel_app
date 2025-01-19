@@ -3,9 +3,9 @@ const OpenaiClient = require('./OpenaiClient');
 
 class ApiCompletionChat extends OpenaiClient {
 
-  constructor(objectWithVariables){
+  constructor(oo){
     super();
-    const {histoyConv, information} = objectWithVariables;
+    const {histoyConv, information} = oo;
     this.histoyConv = histoyConv;
     this.information = information;
   }

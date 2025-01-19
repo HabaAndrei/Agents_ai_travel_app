@@ -10,8 +10,8 @@ app.use(cors());
 app.use(express.json());
 
 //////////////////////////////////////////////////////////////////////////////////////////
-
-app.post('/apiCallAi', async (req, res)=>{
+// RCP api
+app.post('/ai-generation', async (req, res)=>{
 
   const {method} = req.query;
   let rezFinal = '';
