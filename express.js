@@ -10,9 +10,32 @@ const { searchDestination } = require('./azureFunctions/searchDestination.js')
 app.use(cors());
 app.use(express.json());
 
-//////////////////////////////////////////////////////////////////////////////////////////
+// validate fields for functions that call AI generation
+function validateFieldsAiGeneration(req, res, next) {
+  const { method } = req.query;
+  // Allowed methods
+  const methodsAllowed = ['createProgram', 'seeAllPlaces', 'createActivities', 'chat'];
+  // if the method does not exist or is not included in the allowed methods, return a 404 response
+  if (!method || !methodsAllowed.includes(method)) return res.sendStatus(404);
+
+  // methods and their required fields
+  const methodsWithFields = {
+    'createProgram': ['from', 'to', 'city', 'country', 'locations', 'hotelAddress'],
+    'seeAllPlaces': ['city', 'country', 'input', 'checkbox', 'isLocalPlaces', 'scaleVisit'],
+    'createActivities': ['city', 'country'],
+    'chat': ['historyConv', 'information'], // Corrected 'histoyConv' to 'historyConv'
+  };
+  // if any required field is undefined, return a 404 response
+  methodsWithFields[method].forEach((field) => {
+    if (req.body[`${field}`] === undefined) return res.sendStatus(404);
+  });
+
+  return next();
+}
+
+
 // RCP api
-app.post('/ai-generation', async (req, res)=>{
+app.post('/ai-generation', validateFieldsAiGeneration, async (req, res)=>{
 
   const {method} = req.query;
   let rezFinal = '';
@@ -39,10 +62,6 @@ app.post('/ai-generation', async (req, res)=>{
     case ('chat') : {
       const api = new ApiCompletionChat({histoyConv, information});
       rezFinal = await api.responseQuestion();
-      break;
-    }
-    case ('searchDestination') : {
-      rezFinal = searchDestination(input, country, value);
       break;
     }
   }
