@@ -75,6 +75,7 @@ app.get('/search-destination', async (req, res) => {
 });
 
 app.post('/send-code-email-verification', async (req, res) => {
+
   const {code, email} = req.body;
   const emailTo = email;
   const subject = "Welcome to TravelBot! 🎉";
