@@ -6,10 +6,10 @@ class Mailer {
 
   constructor(){
     this.transporter = nodemailer.createTransport({
-      service: "Gmail",
       host: "smtp.gmail.com",
-      port: 465,
-      secure: true,
+      port: 587,
+      secure: false,
+      requireTLS: true,
       auth: {
         user: EMAIL_ACCOUNT,
         pass: EMAIL_PASSWORD,
