@@ -23,7 +23,7 @@ function validateFieldsAiGeneration(req, res, next) {
     'createProgram': ['from', 'to', 'city', 'country', 'locations', 'hotelAddress'],
     'seeAllPlaces': ['city', 'country', 'input', 'checkbox', 'isLocalPlaces', 'scaleVisit'],
     'createActivities': ['city', 'country'],
-    'chat': ['historyConv', 'information'], // Corrected 'histoyConv' to 'historyConv'
+    'chat': ['historyConv', 'information'],
   };
   // if any required field is undefined, return a 404 response
   methodsWithFields[method].forEach((field) => {
@@ -41,7 +41,7 @@ app.post('/ai-generation', validateFieldsAiGeneration, async (req, res)=>{
   let rezFinal = '';
 
   const {from, to, city, country, locations, input, checkbox, isLocalPlaces,
-    scaleVisit, histoyConv, information, value, hotelAddress} = req.body;
+    scaleVisit, historyConv, information, value, hotelAddress} = req.body;
 
   switch (method) {
     case ('createProgram') : {
@@ -60,7 +60,7 @@ app.post('/ai-generation', validateFieldsAiGeneration, async (req, res)=>{
       break;
     }
     case ('chat') : {
-      const api = new ApiCompletionChat({histoyConv, information});
+      const api = new ApiCompletionChat({historyConv, information});
       rezFinal = await api.responseQuestion();
       break;
     }

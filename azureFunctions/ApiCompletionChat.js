@@ -5,8 +5,8 @@ class ApiCompletionChat extends OpenaiClient {
 
   constructor(oo){
     super();
-    const {histoyConv, information} = oo;
-    this.histoyConv = histoyConv;
+    const {historyConv, information} = oo;
+    this.historyConv = historyConv;
     this.information = information;
   }
 
@@ -85,7 +85,7 @@ class ApiCompletionChat extends OpenaiClient {
       ];
 
       // create history of conversation
-      this.histoyConv.forEach((mes)=>{
+      this.historyConv.forEach((mes)=>{
         if(mes.type === 'user'){
           messages.push({"role": "user", "content": mes.mes});
         }else if(mes.type === 'ai'){
@@ -94,7 +94,7 @@ class ApiCompletionChat extends OpenaiClient {
       });
 
       // verify if the question is accepted by our acceptance creteria
-      const rezAcceptRefuze = await this.acceptOrRejectQuestion(this.histoyConv);
+      const rezAcceptRefuze = await this.acceptOrRejectQuestion(this.historyConv);
       if(!rezAcceptRefuze.isResolved || !rezAcceptRefuze.data){
         return  {isResolved: true, data: "Information not available."}
       }
