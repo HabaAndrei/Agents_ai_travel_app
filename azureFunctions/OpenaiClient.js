@@ -9,15 +9,14 @@ class OpenaiClient {
 
   async retryLlmCallWithSchema(systemPrompt, userPrompt, JsonSchema){
     let count = 0;
-    let isResolved = false;
-    let result = '';
-    while(count < 3 && !isResolved){
-      count+=1;
+    let result;
+    while(count < 3){
       if (count > 1) console.log('is calling retryLlmCallWithSchema', {count});
       const data = await this.LlmCompletionWithSchema(systemPrompt, userPrompt, JsonSchema);
-      if (data.isResolved) isResolved = true;
       result = data;
-    }
+      if (data.isResolved) return data;
+      count += 1;
+    };
     return result;
   }
 
