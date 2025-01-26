@@ -100,7 +100,7 @@ class ApiCompletionChat extends OpenaiClient {
       }
 
       // get response from chat and send it
-      const rez = await this.LlmCallChat(messages);
+      const rez = await this.llmCallChat(messages);
       if(!rez.isResolved) return {isResolved: true, data: "Information not available."}
       return {isResolved: true, data: rez.data}
     }catch(err){
