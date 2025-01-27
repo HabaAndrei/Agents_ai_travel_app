@@ -3,7 +3,7 @@ const { API_KEY_GOOGLE_MAP} = process.env;
 const apiKeyGoogleMaps = API_KEY_GOOGLE_MAP;
 const axios = require('axios');
 const {setDoc, getDoc, doc} = require("firebase/firestore");
-const  z = require("zod");
+const z = require("zod");
 const OpenaiClient = require('./OpenaiClient');
 const Firebase = require('./Firebase');
 
@@ -23,13 +23,13 @@ class ApiCompletionLocations extends OpenaiClient {
     this.firebaseInstance = new Firebase();
   }
 
-  // get image of the city
+  /** get image of the city */
   async getUrlImageCity(city, country){
     try{
       const db = this.firebaseInstance.db;
       const location = [city, country].join(' ');
 
-      // verify if exist in database
+      /** verify if exist in database */
       const docRef = doc(db, "image_places", location);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
@@ -39,14 +39,14 @@ class ApiCompletionLocations extends OpenaiClient {
 
       // call google api to get the image
       const requestFormat = location.replaceAll(' ', '%20');
-      // get id o the place
+      /** get id o the place */
       const data = await axios.post('https://maps.googleapis.com/maps/api/place/findplacefromtext/json?fields=place_id&input=' + requestFormat + '&inputtype=textquery&key=' + apiKeyGoogleMaps);
       const place_id = data?.data?.candidates?.[0]?.place_id;
       if ( !place_id ) return {'isResolved': false};
-      // get image's reference
+      /** get image's reference */
       const detailsPlace = await axios.post('https://maps.googleapis.com/maps/api/place/details/json?fields=photos&place_id=' + place_id +'&key=' + apiKeyGoogleMaps);
       const reference = detailsPlace?.data?.result?.photos?.[0]?.photo_reference;
-      // get image url
+      /** get image url */
       const resultUrl = await this.returnImgLink(reference);
       if (!resultUrl.isResolved) return {'isResolved': false};;
       // store the url in database
@@ -61,7 +61,7 @@ class ApiCompletionLocations extends OpenaiClient {
     }
   }
 
-  // Return an array without duplicate values, verifying only the 'name' and 'alias' properties.
+  /** Return an array without duplicate values, verifying only the 'name' and 'alias' properties. */
   returnUniqueValesFromArray(array){
     let newAr = [];
     array.forEach((data)=>{
@@ -72,7 +72,7 @@ class ApiCompletionLocations extends OpenaiClient {
     return newAr;
   }
 
-  // this function returns link image for a specific reference, i do this with google api
+  /** this function returns link image for a specific reference, i do this with google api */
   async returnImgLink(reference){
     let rezFin = {isResolved: true, url: ''};
     try{
@@ -85,7 +85,7 @@ class ApiCompletionLocations extends OpenaiClient {
     return rezFin;
   }
 
-  // This function retrieves location details from the Google Maps API
+  /** This function retrieves location details from the Google Maps API */
   async locationDetailsFromGoogleApi({place, aliasLocation, description, indexPlace}){
     const db = this.firebaseInstance.db;
     try{
@@ -101,7 +101,7 @@ class ApiCompletionLocations extends OpenaiClient {
       const {formatted_address, place_id} = addressAndIdPlace?.data?.candidates?.[0];
       const address = formatted_address;
 
-      // If the place already exists in the database, I send the data from the database
+      /** If the place already exists in the database, I send the data from the database */
       if(place_id){
         const docRef = doc(db, "places", place_id);
         const docSnap = await getDoc(docRef);
@@ -112,7 +112,7 @@ class ApiCompletionLocations extends OpenaiClient {
         }
       }
 
-      // get details based on place id
+      /** get details based on place id */
       const detailsPlace = await axios.post('https://maps.googleapis.com/maps/api/place/details/json?language=en%2Cfields=geometry%2Cname%2Copening_hours%2Cphotos%2Cwebsite%2Curl&place_id=' + place_id +'&key=' + apiKeyGoogleMaps);
 
       const {url, website, name} = detailsPlace?.data?.result;
@@ -121,7 +121,7 @@ class ApiCompletionLocations extends OpenaiClient {
       const arrayProgramPlace = detailsPlace?.data?.result?.opening_hours?.weekday_text;
       const referincesPhotosArray = detailsPlace?.data?.result?.photos?.map((ob)=>ob.photo_reference);
 
-      // get image link for each reference
+      /** get image link for each reference */
       let arrayWithLinkImages = [];
       const arrayWithPromisesImages = referincesPhotosArray.map((ref)=>{
         return this.returnImgLink(ref);
@@ -132,7 +132,7 @@ class ApiCompletionLocations extends OpenaiClient {
         else arrayWithLinkImages.push(rez.url)
       }
 
-      // create the result object
+      /** create the result object */
       const obData = {
         location: name,
         address : address ? address : '',
@@ -144,7 +144,7 @@ class ApiCompletionLocations extends OpenaiClient {
         arrayWithLinkImages: arrayWithLinkImages ? arrayWithLinkImages : []
       }
 
-      // save the place in database
+      /** save the place in database */
       if(place_id)setDoc(doc(db, "places", place_id), obData);
 
       // send the result
@@ -155,7 +155,7 @@ class ApiCompletionLocations extends OpenaiClient {
     }
   }
 
-  // this function retrive visit packages for a specific location
+  /** this function retrive visit packages for a specific location */
   async visitPackages(place, index){
     try{
       // prompts and json schema
@@ -182,7 +182,7 @@ class ApiCompletionLocations extends OpenaiClient {
         })
       });
 
-      // Create the request to OpenAI and send the result based on the information received.
+      /** Create the request to OpenAI and send the result based on the information received. */
       const resultTimeToLocationLlm =  await this.retryLlmCallWithSchema(textPromptSystem, textPromptUser, JsonSchema);
       if(!resultTimeToLocationLlm.isResolved){
         return {isResolved: false, err: resultTimeToLocationLlm?.err};;
@@ -194,7 +194,7 @@ class ApiCompletionLocations extends OpenaiClient {
     }
   }
 
-  // Verify if the locations are within the proximity area
+  /** Verify if the locations are within the proximity area */
   async verifyProximitylocations(locations, prompt){
     if (typeof locations != 'string') locations = JSON.stringify(locations);
     try {
@@ -212,7 +212,7 @@ class ApiCompletionLocations extends OpenaiClient {
         })
       })
 
-      // Create the request to OpenAI and send the result based on the information received.
+      /** Create the request to OpenAI and send the result based on the information received. */
       const resultVerifyLocations = await this.retryLlmCallWithSchema(textPromptSystem, textPromptUser, JsonSchema);
       if(!resultVerifyLocations.isResolved){
         return {isResolved: false};
@@ -226,19 +226,19 @@ class ApiCompletionLocations extends OpenaiClient {
     }
   }
 
-  // get locations to visit in a city
+  /** get locations to visit in a city */
   async getAllPlacesAboutLocations(){
     try{
-      // Based on the selected activities, the option to visit popular places (or not), and the chat, create a flexible prompt with a JSON schema.
+      /** Based on the selected activities, the option to visit popular places (or not), and the chat, create a flexible prompt with a JSON schema. */
       let textPromptUser = 'Location: ' + this.city + '  from  ' + this.country;
       let categories =  'This is the list of [Activities]: ' +  `${this?.checkbox?.length ? this.checkbox?.join(', ') : ''}`
       +  `${this?.checkbox?.length ? ', ' : ' '}` + `${this?.input ? this?.input : ''}`;
 
-      // Show multiple places to generate the LLM.
+      /** Show multiple places to generate the LLM. */
       let numberOfPlacesPrompt = this?.scaleVisit == '1'  ? '' :
       this?.scaleVisit == '2' ? `Generate at least 6 locations to visit.` : this?.scaleVisit == '3' ? `Generate at least 15 locations to visit.`  : '';
 
-      // local places or not
+      /** local places or not */
       let requirememtPrompt = this.isLocalPlaces === 'true' ? `
         \n Requirement:  The input should be a request for lesser-known locations. Provide recommendations for places frequented by locals, rather than popular tourist spots.
         You can get inspiration from local sites or blogs that recommend something like this.
@@ -251,14 +251,14 @@ class ApiCompletionLocations extends OpenaiClient {
         \n Verification: Ensure that every activity has at least one associated location.
       `;
 
-      // If the function was rejected, use that argument to create the best prompt.
+      /** If the function was rejected, use that argument to create the best prompt. */
       if (this.rejectionReasonForProximityVerification.length) {
         textPromptSystem += `\n Notice: This is the reason why the result wasn t go last time: ${this.rejectionReasonForProximityVerification}.
         \n <<<<<  Don t repet the same mistakes >>>>> `
       }
-      // json schema
+      /** json schema */
       const UniquePlacesSchema = z.object({
-      	name: z.string().describe(`The name in english. The name should be relevant. For example, if you are in Brașov, Romania, and choose Poiana Brașov, don’t just say 'Poiana'; say 'Poiana Brașov,' the full name.`),
+      	name: z.string().describe(`The name in english. The name should be relevant. For example, if you are in Brașov, Romania, and choose Poiana Brașov, don't just say 'Poiana'; say 'Poiana Brașov,' the full name.`),
         alias: z.string().describe("The name in the country's languge"),
         description: z.string().describe('Only one word description e.g: road, mountain, lake, church, museum, restaurant, shop')
       })
@@ -268,51 +268,51 @@ class ApiCompletionLocations extends OpenaiClient {
       	})
       });
 
-      // create locations
+      /** create locations */
       const resultLocationsLlm = await this.retryLlmCallWithSchema(textPromptSystem, textPromptUser, JsonSchema);
       if(!resultLocationsLlm.isResolved){
         return {isResolved: false, err: resultLocationsLlm?.err };
       }
       let resultLocations = resultLocationsLlm.data;
 
-      // verify proximity of locations
+      /** verify proximity of locations */
       const resultVerification = await this.verifyProximitylocations(resultLocations, textPromptUser);
 
-      // Execute a maximum of 3 times if the LLM does not provide a location to be included in the acceptance criteria
+      /** Execute a maximum of 3 times if the LLM does not provide a location to be included in the acceptance criteria */
       if(resultVerification?.isResolved && !resultVerification?.data && this.countVerifyLocations < 3){
         console.log('is executing again: ', this.countVerifyLocations);
         return this.getAllPlacesAboutLocations();
       }
       const {unique_places} = resultLocations;
 
-      // filter only unique places based on 'name' and 'alias'
+      /** filter only unique places based on 'name' and 'alias' */
       const arWithNameAliasDescription = this.returnUniqueValesFromArray(unique_places);
 
-      // get details for each location
+      /** get details for each location */
       const arrayWithCalls = arWithNameAliasDescription.map((objectNameAlias, index)=>{
         const {alias, description, name} = objectNameAlias;
         return this.locationDetailsFromGoogleApi({place: name, aliasLocation: alias, description, indexPlace: index});
       })
       const dataFromGoogleCalls = await Promise.all(arrayWithCalls);
 
-      // get visit packages for each location
+      /** get visit packages for each location */
       const arrayCallsVisitPackages = arWithNameAliasDescription.map((objectNameAlias, index)=>{
         const {alias} = objectNameAlias;
         return this.visitPackages(alias, index);
       });
       const dataFromVisitPackages = await Promise.all(arrayCallsVisitPackages);
 
-      // associate packages with locations
+      /** associate packages with locations */
       const findVisitPackagesLocation = (index) => {
         const ob = dataFromVisitPackages.find((ob)=>ob.index === index);
         return !ob?.isResolved ? {} : {...ob?.data};
       };
 
-      // get url image of the city
+      /** get url image of the city */
       const responseImageCity =  await this.getUrlImageCity(this.city, this.country);
       const urlImageCity = responseImageCity?.url;
 
-      // associate details from google api with locations and create the response
+      /** associate details from google api with locations and create the response */
       let arrayWithAllLocations = [];
       for(let details of dataFromGoogleCalls){
         if(!details.isResolved)continue;

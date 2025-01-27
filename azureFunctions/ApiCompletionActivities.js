@@ -1,4 +1,4 @@
-const  z = require("zod");
+const z = require("zod");
 const OpenaiClient = require('./OpenaiClient');
 
 class ApiCompletionActivities extends OpenaiClient {
@@ -10,7 +10,7 @@ class ApiCompletionActivities extends OpenaiClient {
     this.country = country;
   }
 
-  // get specific parameter for location
+  /** get specific parameter for location */
   async paramsAboutLocation(){
     try{
       // prompts and json schema
@@ -42,7 +42,7 @@ class ApiCompletionActivities extends OpenaiClient {
     }
   }
 
-  // this function create activities based on the location recived
+  /** this function create activities based on the location recived */
   async createActivities(){
     try{
       // prompts and json schema
@@ -66,7 +66,7 @@ class ApiCompletionActivities extends OpenaiClient {
       }
       let resultActivities = resultCreateActivitiesLlm.data;
 
-      // get parameters for locations
+      /** get parameters for locations */
       const paramsLocation = await this.paramsAboutLocation();
       return paramsLocation.isResolved ? {isResolved: true, data: resultActivities, paramsLocation} : {isResolved: true, data: resultActivities};
     }catch(err){

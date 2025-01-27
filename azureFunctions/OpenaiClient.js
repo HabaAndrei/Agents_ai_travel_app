@@ -8,7 +8,7 @@ const ConfigLoader = require('../model/ConfigLoader.js');
 
 const loader = new ConfigLoader();
 
-// base class for particular instances of LLM clients
+/** base class for particular instances of LLM clients */
 class OpenaiClient {
 
   async retryLlmCallWithSchema(systemPrompt, userPrompt, JsonSchema){
@@ -24,7 +24,7 @@ class OpenaiClient {
     return result;
   }
 
-  // universal function to call open ai with zod response only
+  /** universal function to call open ai with zod response only */
   async llmCompletionWithSchema(systemPrompt, userPrompt, JsonSchema){
     try {
       const completion = await openai_client.chat.completions.create({

@@ -1,5 +1,5 @@
 const FuzzySearch = require('fuzzy-search');
-const dataCountryCities = require('./dataCountryCities.json');
+const dataCountryCities = require('../config/dataCountryCities.json');
 
 function searchDestination(input, country, value){
   if (!input?.length) return;

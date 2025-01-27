@@ -1,4 +1,4 @@
-// getter
+/** getter */
 class ConfigLoader {
   #config;
 

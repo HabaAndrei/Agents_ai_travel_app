@@ -1,4 +1,4 @@
-const  z = require("zod");
+const z = require("zod");
 const OpenaiClient = require('./OpenaiClient');
 
 class ApiCompletionChat extends OpenaiClient {
@@ -10,7 +10,7 @@ class ApiCompletionChat extends OpenaiClient {
     this.information = information;
   }
 
-  // function that accept or refuze the question
+  /** function that accept or refuze the question */
   async acceptOrRejectQuestion(historyConv){
     try{
       if(typeof(historyConv) != 'string')historyConv = JSON.stringify(historyConv);
@@ -38,7 +38,7 @@ class ApiCompletionChat extends OpenaiClient {
     }
   }
 
-  // the main function
+  /** the main function */
   async responseQuestion(){
     try{
       // prompts and the app manual
@@ -84,7 +84,7 @@ class ApiCompletionChat extends OpenaiClient {
         }
       ];
 
-      // create history of conversation
+      /** create history of conversation */
       this.historyConv.forEach((mes)=>{
         if(mes.type === 'user'){
           messages.push({"role": "user", "content": mes.mes});
@@ -93,7 +93,7 @@ class ApiCompletionChat extends OpenaiClient {
         }
       });
 
-      // verify if the question is accepted by our acceptance creteria
+      /** verify if the question is accepted by our acceptance creteria */
       const rezAcceptRefuze = await this.acceptOrRejectQuestion(this.historyConv);
       if(!rezAcceptRefuze.isResolved || !rezAcceptRefuze.data){
         return  {isResolved: true, data: "Information not available."}
