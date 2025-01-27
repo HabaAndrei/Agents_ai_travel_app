@@ -1,0 +1,7 @@
+{
+  "verifyEmail": {
+    "subject": "Welcome to TravelBot! 🎉",
+    "htmlContent": "<div style=\"font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9; border: 1px solid #ddd; border-radius: 10px;\">\n<h1 style=\"color: #1e90ff; text-align: center;\">Welcome to TravelBot! 🎉</h1>\n<p>We’re thrilled to have you join us! To get started, simply enter the verification code below in the app:</p>\n<p style=\"font-size: 24px; font-weight: bold; color: #1e90ff; text-align: center; margin: 20px 0;\">${code}</p>\n<p>This code will expire in 10 minutes.</p>\n<hr style=\"border: none; border-top: 1px solid #ddd; margin: 20px 0;\" />\n<p>If you didn’t sign up, no worries! Just ignore this email.</p>\n<p style=\"margin-top: 40px; color: #7f8c8d; font-size: 14px; text-align: center;\">Warm regards,<br/>The TravelBot Team</p>\n<p style=\"font-size: 12px; color: #bdc3c7; text-align: center;\">This is an automated message, please do not reply.</p>\n</div>",
+    "contentToReplace": "${code}"
+  }
+}
