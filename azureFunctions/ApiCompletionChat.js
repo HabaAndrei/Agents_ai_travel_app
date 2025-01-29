@@ -15,18 +15,18 @@ class ApiCompletionChat extends OpenaiClient {
     try{
       if(typeof(historyConv) != 'string')historyConv = JSON.stringify(historyConv);
       // prompts and json schema
-      const textPromptSystem = `
+      const systemPrompt = `
         \n Task: Check text follws rules: 1. No harm/violence 2. No illegal acts  4. SFW content  5. No PII  6. No unauthorized access
         7. Banned topics:  - Violence  - Illegal acts  - Hate speech  - Private data  - Hacking  - Fraud
       `;
-      const textPromptUser = `The history of conversation: ${historyConv}.`;
+      const userPrompt = `The history of conversation: ${historyConv}.`;
       const JsonSchema = z.object({
         response: z.object({
           is_correct_question: z.boolean().describe('true / false')
         })
       })
       // Create the request to OpenAI and send the result based on the information received.
-      const resultAcceptOrRejectQuestionLlm = await this.retryLlmCallWithSchema(textPromptSystem, textPromptUser, JsonSchema);
+      const resultAcceptOrRejectQuestionLlm = await this.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
       if(!resultAcceptOrRejectQuestionLlm.isResolved){
         return {isResolved: false, err: resultAcceptOrRejectQuestionLlm?.err};
       }

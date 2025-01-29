@@ -14,7 +14,7 @@ class ApiCompletionActivities extends OpenaiClient {
   async paramsAboutLocation(){
     try{
       // prompts and json schema
-      const textPromptSystem = `
+      const systemPrompt = `
         \n Task: You are an expert in location approximation. Your task is to receive a location and return two pieces of information in JSON format.
         \n Task desctiption:
         \n 1. Determine whether the given location offers both local places (places known only to local residents) and popular tourist spots.
@@ -22,7 +22,7 @@ class ApiCompletionActivities extends OpenaiClient {
           Return false if it offers only one category (either local or tourist spots).
         \n 2. On a scale of 1 to 3, assess how many places are available to visit in that location.
       `;
-      const textPromptUser = 'Location: ' + this.city + '  from  ' + this.country;
+      const userPrompt = 'Location: ' + this.city + '  from  ' + this.country;
       const JsonSchema = z.object({
         response: z.object({
           data: z.object({
@@ -32,7 +32,7 @@ class ApiCompletionActivities extends OpenaiClient {
         })
       })
       // Create the request to OpenAI and send the result based on the information received.
-      const resultParamsAboutLocationLlm = await this.retryLlmCallWithSchema(textPromptSystem, textPromptUser, JsonSchema);
+      const resultParamsAboutLocationLlm = await this.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
       if(!resultParamsAboutLocationLlm.isResolved){
         return {isResolved: false, err: resultParamsAboutLocationLlm?.err};
       }
@@ -46,13 +46,13 @@ class ApiCompletionActivities extends OpenaiClient {
   async createActivities(){
     try{
       // prompts and json schema
-      const textPromptSystem = `
+      const systemPrompt = `
         \n Task: You receive a location as input and return a JSON with various activities available for tourists to do, specific to that location.
           For each activity, there should be locations where it can be done. If the location is not in that area, do not include that activity.
           Generate only activities that are specific to that location, not from the surrounding areas
         \n Note: Answer as general as possible, not specic, let it be like a category.
       `;
-      const textPromptUser = 'Location: ' + this.city + '  from  ' + this.country;
+      const userPrompt = 'Location: ' + this.city + '  from  ' + this.country;
       const JsonSchema = z.object({
         response: z.object({
           activities: z.array(z.string()).describe('Here should be the activities I can do in that location, e.g., [Sport, History, Wellness, etc.]')
@@ -60,7 +60,7 @@ class ApiCompletionActivities extends OpenaiClient {
       });
 
       // create request to open ai to recive activities
-      const resultCreateActivitiesLlm = await this.retryLlmCallWithSchema(textPromptSystem, textPromptUser, JsonSchema);
+      const resultCreateActivitiesLlm = await this.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
       if(!resultCreateActivitiesLlm.isResolved){
         return {isResolved: false, err: resultCreateActivitiesLlm?.err};
       }

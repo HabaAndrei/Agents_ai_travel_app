@@ -32,7 +32,7 @@ class ApiCompletionProgram extends OpenaiClient {
       }
 
       /** prompts and json schema */
-      const textPromptSystem =  `
+      const systemPrompt =  `
         Task: Return information in JSON format about a given location, following this structure.
       `;
       const JsonSchema = z.object({
@@ -41,10 +41,10 @@ class ApiCompletionProgram extends OpenaiClient {
           info: z.string().describe('Key details about the location, including guidance on how to purchase tickets (excluding price information), no longer than 30 words'),
         })
       })
-      const textPromptUser =  `Location: {name: ${name}, From ${this.city}, ${this.country}`;
+      const userPrompt =  `Location: {name: ${name}, From ${this.city}, ${this.country}`;
 
       /** Create the request to OpenAI */
-      const resultDetailsPlacesLlm = await this.retryLlmCallWithSchema(textPromptSystem, textPromptUser, JsonSchema);
+      const resultDetailsPlacesLlm = await this.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
       if(!resultDetailsPlacesLlm.isResolved){
         return {isResolved: false};
       }
@@ -94,11 +94,11 @@ class ApiCompletionProgram extends OpenaiClient {
     try {
       // prompts and json schema
       this.countVerificationEfficiencyProgram += 1;
-      const textPromptSystem =  `
+      const systemPrompt =  `
         Task: Your task is to check if the locations are grouped by days based on their proximity.
         The program is a visit intinerary. The visit should be very efficient, in order not to return to the same place several times.
       `;
-      const textPromptUser =  `Program: ${program}.`;
+      const userPrompt =  `Program: ${program}.`;
       const JsonSchema = z.object({
         response: z.object({
           isRespectingTheRules: z.boolean().describe('true / false'),
@@ -106,7 +106,7 @@ class ApiCompletionProgram extends OpenaiClient {
         })
       })
       /** Create the request to OpenAI and send the result based on the information received. */
-      const resultEfficiencyProgramLlm = await this.retryLlmCallWithSchema(textPromptSystem, textPromptUser, JsonSchema);
+      const resultEfficiencyProgramLlm = await this.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
       if(!resultEfficiencyProgramLlm.isResolved){
         return {isResolved: false};
       }
@@ -149,7 +149,7 @@ class ApiCompletionProgram extends OpenaiClient {
 
       /** prompts and json schem to create the program */
       const nameIndexAddressLocationsArString = JSON.stringify(nameIndexAddressLocationsAr);
-      let textPromptSystem = `
+      let systemPrompt = `
       \n Objective: You are the best at creating a daily itinerary based on a provided date range and list of locations.
       \n Task: The main task is to group the location daily to be closer to each other, the visit should be very efficient,
         in order not to return to the same place several times.
@@ -158,14 +158,14 @@ class ApiCompletionProgram extends OpenaiClient {
       \n Important: Make sure you meet all the requirements above, especially the structure.
       `;
       if(this.rejectionReasonForEfficiencyVerification.length){
-        textPromptSystem += `\n Notice: This is the reason why the result wasn t good last time: ${this.rejectionReasonForEfficiencyVerification}.
+        systemPrompt += `\n Notice: This is the reason why the result wasn t good last time: ${this.rejectionReasonForEfficiencyVerification}.
         \n <<<<<  Don t repet the same mistakes >>>>> `;
       }
-      let textPromptUser = `
+      let userPrompt = `
         This is an array of objects with their IDs << ${nameIndexAddressLocationsArString} >>
         The itinerary should be from the dates ${this.from} to ${this.to}, for ${this.city}, ${this.country}.
       `;
-      if ( this.hotelAddress ) textPromptUser += `This is the hotel's address: ${this.hotelAddress}`;
+      if ( this.hotelAddress ) userPrompt += `This is the hotel's address: ${this.hotelAddress}`;
 
       const   Activities = z.object({
         place: z.string().describe('The name of the place e.g. "The Palm Dubai"'),
@@ -184,7 +184,7 @@ class ApiCompletionProgram extends OpenaiClient {
       });
 
       /** create the program */
-      const resultProgramLlm = await this.retryLlmCallWithSchema(textPromptSystem, textPromptUser, JsonSchema);
+      const resultProgramLlm = await this.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
       if(!resultProgramLlm.isResolved){
         return {isResolved: false, err: resultProgramLlm?.err};
       }
@@ -266,16 +266,16 @@ class ApiCompletionProgram extends OpenaiClient {
   async completionProgramDay(date, activities, day){
     try{
       // prompts and json schema
-      let textPromptSystem = '';
+      let systemPrompt = '';
       if(activities.length === 1){
-        textPromptSystem = `
+        systemPrompt = `
           \n Objective: You are a specialist in optimizing travel itineraries based on location schedules.
           \n Task: Provide me with the location and time as shown in the example below, so that I can visit the location and make a decision based on the schedule.
           \n Restrictions:
             Do not add any extra locations to the schedule. Only use the provided location, and avoid modifying it.
           `;
       }else{
-        textPromptSystem = `
+        systemPrompt = `
           \n Task: You receive a day itinerary with multiple tourist locations and your job is to organize these locations into a one-day schedule.
           \n << Considerations for time at the location: The time I should arrive at the location will be estimated based on the time it takes to get there when it's open, the time I want to spend visiting, and the time lost in traffic during the journey. >>
           \n Restrictions:
@@ -295,11 +295,11 @@ class ApiCompletionProgram extends OpenaiClient {
           )
         })
       })
-      let textPromptUser = `This is the date: ${date}, and this is the itinerary I want to create in the format from the system role example above: ${JSON.stringify(activities)},
+      let userPrompt = `This is the date: ${date}, and this is the itinerary I want to create in the format from the system role example above: ${JSON.stringify(activities)},
         for ${this.city}, ${this.country}.`;
-      if ( this.hotelAddress ) textPromptUser += `This is the hotel's address: ${this.hotelAddress}`;
+      if ( this.hotelAddress ) userPrompt += `This is the hotel's address: ${this.hotelAddress}`;
 
-      const resultCompletionProgramDayLlm = await this.retryLlmCallWithSchema(textPromptSystem, textPromptUser, JsonSchema);
+      const resultCompletionProgramDayLlm = await this.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
       if(!resultCompletionProgramDayLlm.isResolved){
         return {isResolved: false, err: resultCompletionProgramDayLlm?.err};
       }
@@ -328,14 +328,14 @@ class ApiCompletionProgram extends OpenaiClient {
   async verifyEfficiencyProgramDay(program){
     try{
       // prompts and json schema
-      const textPromptSystem = `Task: Your task is to verify whether the day program is efficient and avoids returning to the same place multiple times.`;
-      const textPromptUser = 'Verify this program: ' + JSON.stringify(program);
+      const systemPrompt = `Task: Your task is to verify whether the day program is efficient and avoids returning to the same place multiple times.`;
+      const userPrompt = 'Verify this program: ' + JSON.stringify(program);
       const JsonSchema = z.object({
         response: z.object({
           isRespectingTheRules: z.boolean().describe('true / false')
         })
       })
-      const resultVerifyProgramDayLlm = await this.retryLlmCallWithSchema(textPromptSystem, textPromptUser, JsonSchema);
+      const resultVerifyProgramDayLlm = await this.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
       if(!resultVerifyProgramDayLlm.isResolved){
         return {isResolved: false};
       }

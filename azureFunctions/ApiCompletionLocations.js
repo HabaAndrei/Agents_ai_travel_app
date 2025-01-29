@@ -159,7 +159,7 @@ class ApiCompletionLocations extends OpenaiClient {
   async visitPackages(place, index){
     try{
       // prompts and json schema
-      const textPromptSystem = `
+      const systemPrompt = `
         \n Task: You are an expert providing an estimation of the time required to visit a location and the available packages for visiting that location.
         \n Important:
           1. If the location is not known, return this in JSON format: {response: {}}.
@@ -167,7 +167,7 @@ class ApiCompletionLocations extends OpenaiClient {
           (example: In Burj Khalifa, Dubai, I want the packages to include only Burj Khalifa activities, not the Dubai Mall or the fountain spectacle." )
           3. The packages should complement each other, as in this example: << 1. Garden visit 2. Lake visit 3. Lake plus Garden visit >>
       `;
-      const textPromptUser = `Place: ${place} from ${this.city}, ${this.country}`;
+      const userPrompt = `Place: ${place} from ${this.city}, ${this.country}`;
 
       const Packages = z.object({
         package_description: z.string().describe('Maxim two sentences'),
@@ -183,7 +183,7 @@ class ApiCompletionLocations extends OpenaiClient {
       });
 
       /** Create the request to OpenAI and send the result based on the information received. */
-      const resultTimeToLocationLlm =  await this.retryLlmCallWithSchema(textPromptSystem, textPromptUser, JsonSchema);
+      const resultTimeToLocationLlm =  await this.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
       if(!resultTimeToLocationLlm.isResolved){
         return {isResolved: false, err: resultTimeToLocationLlm?.err};;
       }
@@ -200,8 +200,8 @@ class ApiCompletionLocations extends OpenaiClient {
     try {
       // prompts and json schema
       this.countVerifyLocations+=1;
-      const textPromptUser =  prompt + 'Locations: ' + locations;
-      const textPromptSystem = `
+      const userPrompt =  prompt + 'Locations: ' + locations;
+      const systemPrompt = `
       \n Task: Your task is to verify if all places belong to a specific location. The places can be from the surroundings
         If even one place is not from that location, the verification should return false, as shown in the example below.
       `;
@@ -213,7 +213,7 @@ class ApiCompletionLocations extends OpenaiClient {
       })
 
       /** Create the request to OpenAI and send the result based on the information received. */
-      const resultVerifyLocations = await this.retryLlmCallWithSchema(textPromptSystem, textPromptUser, JsonSchema);
+      const resultVerifyLocations = await this.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
       if(!resultVerifyLocations.isResolved){
         return {isResolved: false};
       }
@@ -230,7 +230,7 @@ class ApiCompletionLocations extends OpenaiClient {
   async getAllPlacesAboutLocations(){
     try{
       /** Based on the selected activities, the option to visit popular places (or not), and the chat, create a flexible prompt with a JSON schema. */
-      let textPromptUser = 'Location: ' + this.city + '  from  ' + this.country;
+      let userPrompt = 'Location: ' + this.city + '  from  ' + this.country;
       let categories =  'This is the list of [Activities]: ' +  `${this?.checkbox?.length ? this.checkbox?.join(', ') : ''}`
       +  `${this?.checkbox?.length ? ', ' : ' '}` + `${this?.input ? this?.input : ''}`;
 
@@ -244,7 +244,7 @@ class ApiCompletionLocations extends OpenaiClient {
         You can get inspiration from local sites or blogs that recommend something like this.
       ` : '';
 
-      let textPromptSystem = `
+      let systemPrompt = `
         \n Task: Your goal is to return a list of places I can visit as a tourist, based on a given location and a list of [activities].
           The locations must not be repeated.  ${numberOfPlacesPrompt}
         \n Attention: Ensure the locations provided match the given category of interest: ${categories}. ${requirememtPrompt}
@@ -253,7 +253,7 @@ class ApiCompletionLocations extends OpenaiClient {
 
       /** If the function was rejected, use that argument to create the best prompt. */
       if (this.rejectionReasonForProximityVerification.length) {
-        textPromptSystem += `\n Notice: This is the reason why the result wasn t go last time: ${this.rejectionReasonForProximityVerification}.
+        systemPrompt += `\n Notice: This is the reason why the result wasn t go last time: ${this.rejectionReasonForProximityVerification}.
         \n <<<<<  Don t repet the same mistakes >>>>> `
       }
       /** json schema */
@@ -269,14 +269,14 @@ class ApiCompletionLocations extends OpenaiClient {
       });
 
       /** create locations */
-      const resultLocationsLlm = await this.retryLlmCallWithSchema(textPromptSystem, textPromptUser, JsonSchema);
+      const resultLocationsLlm = await this.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
       if(!resultLocationsLlm.isResolved){
         return {isResolved: false, err: resultLocationsLlm?.err };
       }
       let resultLocations = resultLocationsLlm.data;
 
       /** verify proximity of locations */
-      const resultVerification = await this.verifyProximitylocations(resultLocations, textPromptUser);
+      const resultVerification = await this.verifyProximitylocations(resultLocations, userPrompt);
 
       /** Execute a maximum of 3 times if the LLM does not provide a location to be included in the acceptance criteria */
       if(resultVerification?.isResolved && !resultVerification?.data && this.countVerifyLocations < 3){

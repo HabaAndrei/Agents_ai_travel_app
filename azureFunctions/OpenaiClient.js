@@ -11,12 +11,12 @@ const loader = new ConfigLoader();
 /** base class for particular instances of LLM clients */
 class OpenaiClient {
 
-  async retryLlmCallWithSchema(systemPrompt, userPrompt, JsonSchema){
+  async retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema}){
     let failedLLMCalls = 0;
     let result;
     while(failedLLMCalls < 3){
       if (failedLLMCalls > 1) console.log('retrying LLM call ... #', {failedLLMCalls});
-      const data = await this.llmCompletionWithSchema(systemPrompt, userPrompt, JsonSchema);
+      const data = await this.llmCompletionWithSchema({systemPrompt, userPrompt, JsonSchema});
       result = data;
       if (data.isResolved) return data;
       failedLLMCalls += 1;
@@ -25,7 +25,7 @@ class OpenaiClient {
   }
 
   /** universal function to call open ai with zod response only */
-  async llmCompletionWithSchema(systemPrompt, userPrompt, JsonSchema){
+  async llmCompletionWithSchema({systemPrompt, userPrompt, JsonSchema}){
     try {
       const completion = await openai_client.chat.completions.create({
         messages: [
