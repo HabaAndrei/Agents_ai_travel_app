@@ -1,7 +1,7 @@
 const z = require("zod");
 const OpenaiClient = require('./OpenaiClient');
 
-class ApiCompletionChat extends OpenaiClient {
+class ChatResponseGenerator extends OpenaiClient {
 
   constructor(oo){
     super();
@@ -39,7 +39,7 @@ class ApiCompletionChat extends OpenaiClient {
   }
 
   /** the main function */
-  async responseQuestion(){
+  async generateChatResponse(){
     try{
       // prompts and the app manual
       const appManual = `
@@ -109,4 +109,4 @@ class ApiCompletionChat extends OpenaiClient {
   }
 }
 
-module.exports = { ApiCompletionChat }
+module.exports = { ChatResponseGenerator }

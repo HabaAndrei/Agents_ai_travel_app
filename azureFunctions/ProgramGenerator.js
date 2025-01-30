@@ -3,7 +3,7 @@ const Firebase = require('./Firebase');
 const z = require("zod");
 const {setDoc, getDoc, doc} = require("firebase/firestore");
 
-class ApiCompletionProgram extends OpenaiClient {
+class ProgramGenerator extends OpenaiClient {
 
   constructor(oo){
     super();
@@ -121,7 +121,7 @@ class ApiCompletionProgram extends OpenaiClient {
   }
 
   /** create program function */
-  async createProgram(){
+  async generateProgram(){
     try{
 
       // array of locations with name, address and dataTimeLocation
@@ -196,7 +196,7 @@ class ApiCompletionProgram extends OpenaiClient {
       const {isResolved, existAllLocations} = verificationExistenceOfLocationsFromProgram
       if(isResolved && !existAllLocations){
         console.log('doesnt exist all locations and we are call the function again');
-        return this.createProgram();
+        return this.generateProgram();
       }
 
       /** verify efficiency of program */
@@ -205,7 +205,7 @@ class ApiCompletionProgram extends OpenaiClient {
       // If the program's efficiency is not good, call the function again, but no more than twice.
       if(verificationEfficiencyProgram?.isResolved && !verificationEfficiencyProgram?.data && this.countVerificationEfficiencyProgram < 3){
         console.log('is executing again: ', this.countVerificationEfficiencyProgram);
-        return this.createProgram();
+        return this.generateProgram();
       }
 
       /** add the schedule/operating hours of the locations */
@@ -348,4 +348,4 @@ class ApiCompletionProgram extends OpenaiClient {
 
 }
 
-module.exports = { ApiCompletionProgram }
+module.exports = { ProgramGenerator }

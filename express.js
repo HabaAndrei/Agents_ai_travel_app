@@ -1,30 +1,40 @@
 const express = require('express');
 const app = express();
 const cors = require('cors')
-const {ApiCompletionProgram} = require('./azureFunctions/ApiCompletionProgram.js');
-const {ApiCompletionChat} = require('./azureFunctions/ApiCompletionChat.js');
-const {ApiCompletionLocations} = require('./azureFunctions/ApiCompletionLocations.js');
-const {ApiCompletionActivities} = require('./azureFunctions/ApiCompletionActivities.js');
+const {ActivityGenerator} = require('./azureFunctions/ActivityGenerator.js');
+const {LocationGenerator} = require('./azureFunctions/LocationGenerator.js');
+const {ProgramGenerator} = require('./azureFunctions/ProgramGenerator.js');
+const {ChatResponseGenerator} = require('./azureFunctions/ChatResponseGenerator.js');
 const {Mailer} = require('./mailer/Mailer.js')
 const { searchDestination } = require('./azureFunctions/searchDestination.js')
 const EmailContentProvider = require('./mailer/EmailContentProvider.js');
 app.use(cors());
 app.use(express.json());
 
+
+// instances of classes
+const activityGeneratior = new ActivityGenerator();
+// const locationGenerator = new LocationGenerator();
+// const programGenerator = new ProgramGenerator();
+// const chatResponseGenerator = new ChatResponseGenerator();
+
+
+///////////////////////////////////
+
 // validate fields for functions that call AI generation
 function validateFieldsAiGeneration(req, res, next) {
   const { method } = req.query;
   // Allowed methods
-  const methodsAllowed = ['createProgram', 'seeAllPlaces', 'createActivities', 'chat'];
+  const methodsAllowed = ['generateActivities', 'generateLocations', 'generateProgram', 'generateChatResponse'];
   // if the method does not exist or is not included in the allowed methods, return a 404 response
   if (!method || !methodsAllowed.includes(method)) return res.sendStatus(404);
 
   // methods and their required fields
   const methodsWithFields = {
-    'createProgram': ['from', 'to', 'city', 'country', 'locations', 'hotelAddress'],
-    'seeAllPlaces': ['city', 'country', 'input', 'checkbox', 'isLocalPlaces', 'scaleVisit'],
-    'createActivities': ['city', 'country'],
-    'chat': ['historyConv', 'information'],
+    'generateActivities': ['city', 'country'],
+    'generateLocations': ['city', 'country', 'input', 'checkbox', 'isLocalPlaces', 'scaleVisit'],
+    'generateProgram': ['from', 'to', 'city', 'country', 'locations', 'hotelAddress'],
+    'generateChatResponse': ['historyConv', 'information'],
   };
   // if any required field is undefined, return a 404 response
   methodsWithFields[method].forEach((field) => {
@@ -41,27 +51,26 @@ app.post('/ai-generation', validateFieldsAiGeneration, async (req, res)=>{
   let rezFinal = '';
 
   const {from, to, city, country, locations, input, checkbox, isLocalPlaces,
-    scaleVisit, historyConv, information, value, hotelAddress} = req.body;
+    scaleVisit, historyConv, information, hotelAddress} = req.body;
 
   switch (method) {
-    case ('createProgram') : {
-      const api = new ApiCompletionProgram({from, to, city, country, locations, hotelAddress});
-      rezFinal = await api.createProgram();
+    case ('generateActivities') : {
+      rezFinal = await activityGeneratior.generateActivities({city, country});
       break;
     }
-    case ('seeAllPlaces') : {
-      const api = new ApiCompletionLocations({city, country, input, checkbox, isLocalPlaces, scaleVisit});
-      rezFinal = await api.getAllPlacesAboutLocations();
+    case ('generateLocations') : {
+      const api = new LocationGenerator({city, country, input, checkbox, isLocalPlaces, scaleVisit});
+      rezFinal = await api.generateLocations();
       break;
     }
-    case ('createActivities') : {
-      const api = new ApiCompletionActivities({city, country});
-      rezFinal = await api.createActivities();
+    case ('generateProgram') : {
+      const api = new ProgramGenerator({from, to, city, country, locations, hotelAddress});
+      rezFinal = await api.generateProgram();
       break;
     }
-    case ('chat') : {
-      const api = new ApiCompletionChat({historyConv, information});
-      rezFinal = await api.responseQuestion();
+    case ('generateChatResponse') : {
+      const api = new ChatResponseGenerator({historyConv, information});
+      rezFinal = await api.generateChatResponse();
       break;
     }
   }

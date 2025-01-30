@@ -7,7 +7,7 @@ const z = require("zod");
 const OpenaiClient = require('./OpenaiClient');
 const Firebase = require('./Firebase');
 
-class ApiCompletionLocations extends OpenaiClient {
+class LocationGenerator extends OpenaiClient {
 
   constructor(oo){
     super();
@@ -227,7 +227,7 @@ class ApiCompletionLocations extends OpenaiClient {
   }
 
   /** get locations to visit in a city */
-  async getAllPlacesAboutLocations(){
+  async generateLocations(){
     try{
       /** Based on the selected activities, the option to visit popular places (or not), and the chat, create a flexible prompt with a JSON schema. */
       let userPrompt = 'Location: ' + this.city + '  from  ' + this.country;
@@ -281,7 +281,7 @@ class ApiCompletionLocations extends OpenaiClient {
       /** Execute a maximum of 3 times if the LLM does not provide a location to be included in the acceptance criteria */
       if(resultVerification?.isResolved && !resultVerification?.data && this.countVerifyLocations < 3){
         console.log('is executing again: ', this.countVerifyLocations);
-        return this.getAllPlacesAboutLocations();
+        return this.generateLocations();
       }
       const {unique_places} = resultLocations;
 
@@ -338,11 +338,11 @@ class ApiCompletionLocations extends OpenaiClient {
       }
       return {isResolved: true, data: arrayWithAllLocations, urlImageCity: urlImageCity || ''};
     }catch(err){
-      console.log('error at getAllPlacesAboutLocations', err)
+      console.log('error at generateLocations', err)
       return {isResolved: false, err: err?.message};
     }
   }
 
 }
 
-module.exports = { ApiCompletionLocations }
+module.exports = { LocationGenerator }
