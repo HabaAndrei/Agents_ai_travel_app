@@ -14,9 +14,9 @@ app.use(express.json());
 
 // instances of classes
 const activityGeneratior = new ActivityGenerator();
-// const locationGenerator = new LocationGenerator();
-// const programGenerator = new ProgramGenerator();
-// const chatResponseGenerator = new ChatResponseGenerator();
+const locationGenerator = new LocationGenerator();
+const programGenerator = new ProgramGenerator();
+const chatResponseGenerator = new ChatResponseGenerator();
 
 
 ///////////////////////////////////
@@ -33,12 +33,13 @@ function validateFieldsAiGeneration(req, res, next) {
   const methodsWithFields = {
     'generateActivities': ['city', 'country'],
     'generateLocations': ['city', 'country', 'input', 'checkbox', 'isLocalPlaces', 'scaleVisit'],
-    'generateProgram': ['from', 'to', 'city', 'country', 'locations', 'hotelAddress'],
+    'generateProgram': ['startDate', 'endDate', 'city', 'country', 'locations', 'hotelAddress'],
     'generateChatResponse': ['historyConv', 'information'],
   };
   // if any required field is undefined, return a 404 response
   methodsWithFields[method].forEach((field) => {
-    if (req.body[`${field}`] === undefined) return res.sendStatus(404);
+    // 422 Unprocessable Entity
+    if (req.body[`${field}`] === undefined) return res.sendStatus(422);
   });
 
   return next();
@@ -50,7 +51,7 @@ app.post('/ai-generation', validateFieldsAiGeneration, async (req, res)=>{
   const {method} = req.query;
   let rezFinal = '';
 
-  const {from, to, city, country, locations, input, checkbox, isLocalPlaces,
+  const {startDate, endDate, city, country, locations, input, checkbox, isLocalPlaces,
     scaleVisit, historyConv, information, hotelAddress} = req.body;
 
   switch (method) {
@@ -59,18 +60,15 @@ app.post('/ai-generation', validateFieldsAiGeneration, async (req, res)=>{
       break;
     }
     case ('generateLocations') : {
-      const api = new LocationGenerator({city, country, input, checkbox, isLocalPlaces, scaleVisit});
-      rezFinal = await api.generateLocations();
+      rezFinal = await locationGenerator.generateLocations({city, country, input, checkbox, isLocalPlaces, scaleVisit, isCalledFirstTime: true});
       break;
     }
     case ('generateProgram') : {
-      const api = new ProgramGenerator({from, to, city, country, locations, hotelAddress});
-      rezFinal = await api.generateProgram();
+      rezFinal = await programGenerator.generateProgram({startDate, endDate, city, country, locations, hotelAddress, isCalledFirstTime: true});
       break;
     }
     case ('generateChatResponse') : {
-      const api = new ChatResponseGenerator({historyConv, information});
-      rezFinal = await api.generateChatResponse();
+      rezFinal = await chatResponseGenerator.generateChatResponse({historyConv, information});
       break;
     }
   }

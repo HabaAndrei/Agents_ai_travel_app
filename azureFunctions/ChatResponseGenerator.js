@@ -3,13 +3,6 @@ const OpenaiClient = require('./OpenaiClient');
 
 class ChatResponseGenerator extends OpenaiClient {
 
-  constructor(oo){
-    super();
-    const {historyConv, information} = oo;
-    this.historyConv = historyConv;
-    this.information = information;
-  }
-
   /** function that accept or refuze the question */
   async acceptOrRejectQuestion(historyConv){
     try{
@@ -39,7 +32,7 @@ class ChatResponseGenerator extends OpenaiClient {
   }
 
   /** the main function */
-  async generateChatResponse(){
+  async generateChatResponse({historyConv, information}){
     try{
       // prompts and the app manual
       const appManual = `
@@ -78,14 +71,14 @@ class ChatResponseGenerator extends OpenaiClient {
             << If a user requests to create a travel program, guide them to use the app's features on the "New Trip" screen by searching for the country and city, selecting activities, and generating recommendations.
             For specific locations, suggest entering all desired places directly into the input field for accurate results.
             >>
-            \n Information: Here is the information about trips: ${this.information}
+            \n Information: Here is the information about trips: ${information}
             \n App Manual: Here is the information about the app manual: ${appManual}
           `
         }
       ];
 
       /** create history of conversation */
-      this.historyConv.forEach((mes)=>{
+      historyConv.forEach((mes)=>{
         if(mes.type === 'user'){
           messages.push({"role": "user", "content": mes.mes});
         }else if(mes.type === 'ai'){
@@ -94,7 +87,7 @@ class ChatResponseGenerator extends OpenaiClient {
       });
 
       /** verify if the question is accepted by our acceptance creteria */
-      const rezAcceptRefuze = await this.acceptOrRejectQuestion(this.historyConv);
+      const rezAcceptRefuze = await this.acceptOrRejectQuestion(historyConv);
       if(!rezAcceptRefuze.isResolved || !rezAcceptRefuze.data){
         return  {isResolved: true, data: "Information not available."}
       }

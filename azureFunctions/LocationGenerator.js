@@ -9,22 +9,13 @@ const Firebase = require('./Firebase');
 
 class LocationGenerator extends OpenaiClient {
 
-  constructor(oo){
+  constructor(){
     super();
-    const {city, country, input, checkbox, isLocalPlaces, scaleVisit} = oo;
-    this.city = city;
-    this.country = country;
-    this.input = input;
-    this.checkbox = checkbox;
-    this.isLocalPlaces = isLocalPlaces;
-    this.scaleVisit = scaleVisit;
-    this.countVerifyLocations = 0;
-    this.rejectionReasonForProximityVerification = '';
     this.firebaseInstance = new Firebase();
   }
 
   /** get image of the city */
-  async getUrlImageCity(city, country){
+  async getUrlImageCity({city,  country}){
     try{
       const db = this.firebaseInstance.db;
       const location = [city, country].join(' ');
@@ -86,11 +77,11 @@ class LocationGenerator extends OpenaiClient {
   }
 
   /** This function retrieves location details from the Google Maps API */
-  async locationDetailsFromGoogleApi({place, aliasLocation, description, indexPlace}){
+  async locationDetailsFromGoogleApi({place, aliasLocation, description, indexPlace, city, country}){
     const db = this.firebaseInstance.db;
     try{
       // create the url based on the api specification
-      const input = [place, description, 'like', aliasLocation, 'City:', this.city, 'Country:', this.country].join('%20');
+      const input = [place, description, 'like', aliasLocation, 'City:', city, 'Country:', country].join('%20');
       const requestFormat = input.replaceAll(' ', '%20');
       const addressAndIdPlace = await axios.post('https://maps.googleapis.com/maps/api/place/findplacefromtext/json?fields=formatted_address%2Cplace_id&input=' + requestFormat + '&inputtype=textquery&key=' + apiKeyGoogleMaps);
       // verify to exist the location and get the place id
@@ -156,7 +147,7 @@ class LocationGenerator extends OpenaiClient {
   }
 
   /** this function retrive visit packages for a specific location */
-  async visitPackages(place, index){
+  async visitPackages({place, index, city, country}){
     try{
       // prompts and json schema
       const systemPrompt = `
@@ -167,7 +158,7 @@ class LocationGenerator extends OpenaiClient {
           (example: In Burj Khalifa, Dubai, I want the packages to include only Burj Khalifa activities, not the Dubai Mall or the fountain spectacle." )
           3. The packages should complement each other, as in this example: << 1. Garden visit 2. Lake visit 3. Lake plus Garden visit >>
       `;
-      const userPrompt = `Place: ${place} from ${this.city}, ${this.country}`;
+      const userPrompt = `Place: ${place} from ${city}, ${country}`;
 
       const Packages = z.object({
         package_description: z.string().describe('Maxim two sentences'),
@@ -227,19 +218,23 @@ class LocationGenerator extends OpenaiClient {
   }
 
   /** get locations to visit in a city */
-  async generateLocations(){
+  async generateLocations({city, country, input, checkbox, isLocalPlaces, scaleVisit, isCalledFirstTime}){
+    if( isCalledFirstTime ) {
+      this.countVerifyLocations = 0;
+      this.rejectionReasonForProximityVerification = '';
+    }
     try{
       /** Based on the selected activities, the option to visit popular places (or not), and the chat, create a flexible prompt with a JSON schema. */
-      let userPrompt = 'Location: ' + this.city + '  from  ' + this.country;
-      let categories =  'This is the list of [Activities]: ' +  `${this?.checkbox?.length ? this.checkbox?.join(', ') : ''}`
-      +  `${this?.checkbox?.length ? ', ' : ' '}` + `${this?.input ? this?.input : ''}`;
+      let userPrompt = 'Location: ' + city + '  from  ' + country;
+      let categories =  'This is the list of [Activities]: ' +  `${checkbox?.length ? this.checkbox?.join(', ') : ''}`
+      +  `${checkbox?.length ? ', ' : ' '}` + `${input ? input : ''}`;
 
       /** Show multiple places to generate the LLM. */
-      let numberOfPlacesPrompt = this?.scaleVisit == '1'  ? '' :
-      this?.scaleVisit == '2' ? `Generate at least 6 locations to visit.` : this?.scaleVisit == '3' ? `Generate at least 15 locations to visit.`  : '';
+      let numberOfPlacesPrompt = scaleVisit == '1'  ? '' :
+      scaleVisit == '2' ? `Generate at least 6 locations to visit.` : scaleVisit == '3' ? `Generate at least 15 locations to visit.`  : '';
 
       /** local places or not */
-      let requirememtPrompt = this.isLocalPlaces === 'true' ? `
+      let requirememtPrompt = isLocalPlaces === 'true' ? `
         \n Requirement:  The input should be a request for lesser-known locations. Provide recommendations for places frequented by locals, rather than popular tourist spots.
         You can get inspiration from local sites or blogs that recommend something like this.
       ` : '';
@@ -281,7 +276,7 @@ class LocationGenerator extends OpenaiClient {
       /** Execute a maximum of 3 times if the LLM does not provide a location to be included in the acceptance criteria */
       if(resultVerification?.isResolved && !resultVerification?.data && this.countVerifyLocations < 3){
         console.log('is executing again: ', this.countVerifyLocations);
-        return this.generateLocations();
+        return this.generateLocations({city, country, input, checkbox, isLocalPlaces, scaleVisit, isCalledFirstTime: false});
       }
       const {unique_places} = resultLocations;
 
@@ -291,14 +286,14 @@ class LocationGenerator extends OpenaiClient {
       /** get details for each location */
       const arrayWithCalls = arWithNameAliasDescription.map((objectNameAlias, index)=>{
         const {alias, description, name} = objectNameAlias;
-        return this.locationDetailsFromGoogleApi({place: name, aliasLocation: alias, description, indexPlace: index});
+        return this.locationDetailsFromGoogleApi({place: name, aliasLocation: alias, description, indexPlace: index, city, country});
       })
       const dataFromGoogleCalls = await Promise.all(arrayWithCalls);
 
       /** get visit packages for each location */
       const arrayCallsVisitPackages = arWithNameAliasDescription.map((objectNameAlias, index)=>{
         const {alias} = objectNameAlias;
-        return this.visitPackages(alias, index);
+        return this.visitPackages({place: alias, index, city, country})
       });
       const dataFromVisitPackages = await Promise.all(arrayCallsVisitPackages);
 
@@ -309,7 +304,7 @@ class LocationGenerator extends OpenaiClient {
       };
 
       /** get url image of the city */
-      const responseImageCity =  await this.getUrlImageCity(this.city, this.country);
+      const responseImageCity =  await this.getUrlImageCity({city,  country});
       const urlImageCity = responseImageCity?.url;
 
       /** associate details from google api with locations and create the response */

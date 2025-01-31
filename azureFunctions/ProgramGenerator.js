@@ -5,22 +5,13 @@ const {setDoc, getDoc, doc} = require("firebase/firestore");
 
 class ProgramGenerator extends OpenaiClient {
 
-  constructor(oo){
+  constructor(){
     super();
-    const {from, to, city, country, locations, hotelAddress} = oo;
-    this.from = from;
-    this.to = to;
-    this.city = city;
-    this.country = country;
-    this.locations = locations;
-    this.hotelAddress = hotelAddress;
-    this.countVerificationEfficiencyProgram = 0;
-    this.rejectionReasonForEfficiencyVerification = '';
     this.firebaseInstance = new Firebase();
   }
 
   /** get details for a specific location */
-  async getDetailsPlace(name, id, place_id){
+  async getDetailsPlace({name, id, place_id, city, country}){
     const db = this.firebaseInstance.db;
     try{
       // If the place already exists in the database, I send the data from the database
@@ -41,7 +32,7 @@ class ProgramGenerator extends OpenaiClient {
           info: z.string().describe('Key details about the location, including guidance on how to purchase tickets (excluding price information), no longer than 30 words'),
         })
       })
-      const userPrompt =  `Location: {name: ${name}, From ${this.city}, ${this.country}`;
+      const userPrompt =  `Location: {name: ${name}, From ${city}, ${country}`;
 
       /** Create the request to OpenAI */
       const resultDetailsPlacesLlm = await this.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
@@ -60,7 +51,7 @@ class ProgramGenerator extends OpenaiClient {
   }
 
   /** this function verifies if all places are included in program */
-  verifyExistenceOfLocationsFromProgram(locations, program){
+  verifyExistenceOfLocationsFromProgram({locations, program}){
     try{
       // create an array with all activities (activities are like locations)
       let activities = [];
@@ -121,30 +112,40 @@ class ProgramGenerator extends OpenaiClient {
   }
 
   /** create program function */
-  async generateProgram(){
-    try{
+  async generateProgram({startDate, endDate, city, country, locations, hotelAddress, isCalledFirstTime}){
 
+    if ( isCalledFirstTime ) {
+      this.countVerificationEfficiencyProgram = 0;
+      this.rejectionReasonForEfficiencyVerification = '';
+    }
+
+    try{
       // array of locations with name, address and dataTimeLocation
-      const nameIndexAddressLocationsAr = this.locations.map((ob, index)=>{
+      const nameIndexAddressLocationsAr = locations.map((ob, index)=>{
         const {name, address, dataTimeLocation} = ob;
         return {name, address, dataTimeLocation, id: index}
       });
 
       /** array of locations with name and index */
-      const nameIndexLocationsAr = this.locations.map((location, index)=>{
-        return {name: location.name, index}
+      const nameIndexLocationsAr = locations.map((_location, index)=>{
+        return {name: _location.name, index}
       });
 
       /** for each location get details */
-      const arrayPromisesDetails = this.locations.map((location, index)=>{
-        return this.getDetailsPlace(location.name, index, location.place_id);
+      const arrayPromisesDetails = locations.map((_location, index)=>{
+        return this.getDetailsPlace({
+          name: _location.name,
+          id: index,
+          place_id: _location.place_id,
+          city, country
+        })
       })
       const rezArrayPromisesDetails = await Promise.all(arrayPromisesDetails);
       /** populate the main locations with details like description and info */
       rezArrayPromisesDetails.forEach((ob)=>{
         if(!ob.isResolved)return;
-        this.locations[ob.id].description = ob.description;
-        this.locations[ob.id].info = ob.info;
+        locations[ob.id].description = ob.description;
+        locations[ob.id].info = ob.info;
       })
 
       /** prompts and json schem to create the program */
@@ -163,9 +164,9 @@ class ProgramGenerator extends OpenaiClient {
       }
       let userPrompt = `
         This is an array of objects with their IDs << ${nameIndexAddressLocationsArString} >>
-        The itinerary should be from the dates ${this.from} to ${this.to}, for ${this.city}, ${this.country}.
+        The itinerary should be from the dates ${startDate} to ${endDate}, for ${city}, ${country}.
       `;
-      if ( this.hotelAddress ) userPrompt += `This is the hotel's address: ${this.hotelAddress}`;
+      if ( hotelAddress ) userPrompt += `This is the hotel's address: ${hotelAddress}`;
 
       const   Activities = z.object({
         place: z.string().describe('The name of the place e.g. "The Palm Dubai"'),
@@ -192,11 +193,11 @@ class ProgramGenerator extends OpenaiClient {
       const {program} = contentProgram;
 
       /** verify if exist all locations in program */
-      const verificationExistenceOfLocationsFromProgram = this.verifyExistenceOfLocationsFromProgram(nameIndexLocationsAr, program);
+      const verificationExistenceOfLocationsFromProgram = this.verifyExistenceOfLocationsFromProgram({location: nameIndexLocationsAr, program});
       const {isResolved, existAllLocations} = verificationExistenceOfLocationsFromProgram
       if(isResolved && !existAllLocations){
         console.log('doesnt exist all locations and we are call the function again');
-        return this.generateProgram();
+        return this.generateProgram({startDate, endDate, city, country, locations, hotelAddress, isCalledFirstTime: false});
       }
 
       /** verify efficiency of program */
@@ -205,13 +206,13 @@ class ProgramGenerator extends OpenaiClient {
       // If the program's efficiency is not good, call the function again, but no more than twice.
       if(verificationEfficiencyProgram?.isResolved && !verificationEfficiencyProgram?.data && this.countVerificationEfficiencyProgram < 3){
         console.log('is executing again: ', this.countVerificationEfficiencyProgram);
-        return this.generateProgram();
+        return this.generateProgram({startDate, endDate, city, country, locations, hotelAddress, isCalledFirstTime: false});
       }
 
       /** add the schedule/operating hours of the locations */
       for(let dayProgram of program){
         const activitiesWithProgram = dayProgram.activities.map((ob)=>{
-          const {arrayProgramPlace, dataTimeLocation} = this.locations[ob.id];
+          const {arrayProgramPlace, dataTimeLocation} = locations[ob.id];
           return {place: ob.place, program: arrayProgramPlace, id: ob.id, dataTimeLocation};
         })
         dayProgram.activities = activitiesWithProgram;
@@ -220,7 +221,12 @@ class ProgramGenerator extends OpenaiClient {
       /** For each day, add the time to visit the attractions. */
       ///////////////////////////////////////////////////////////////////////////////////
       const arrayPromisesProgramDay = program.map((dayProgram)=>{
-        return this.completionProgramDay(dayProgram.date, dayProgram.activities, dayProgram.day);
+        return this.generateProgramDay({
+          date: dayProgram.date,
+          activities: dayProgram.activities,
+          day: dayProgram.day,
+          city, country, hotelAddress
+        })
       })
       const rezPromisesProgramDay = await Promise.all(arrayPromisesProgramDay);
       let dataFromRezPromisesProgramDay = [];
@@ -234,7 +240,7 @@ class ProgramGenerator extends OpenaiClient {
         // for each activity of day
         for(let activity of day.activities){
           /** Populate each activity with all the details about it. */
-          const {address, urlLocation, geometry_location, place_id, website, arrayWithLinkImages, dataTimeLocation, description, info}  = this.locations[activity.id];
+          const {address, urlLocation, geometry_location, place_id, website, arrayWithLinkImages, dataTimeLocation, description, info}  = locations[activity.id];
           activity.address = address ? address : '';
           activity.urlLocation = urlLocation ? urlLocation : '';
           activity.geometry_location = geometry_location ? geometry_location : '',
@@ -263,7 +269,7 @@ class ProgramGenerator extends OpenaiClient {
   }
 
   /** order location for each day */
-  async completionProgramDay(date, activities, day){
+  async generateProgramDay({date, activities, day, city, country, hotelAddress}){
     try{
       // prompts and json schema
       let systemPrompt = '';
@@ -296,8 +302,8 @@ class ProgramGenerator extends OpenaiClient {
         })
       })
       let userPrompt = `This is the date: ${date}, and this is the itinerary I want to create in the format from the system role example above: ${JSON.stringify(activities)},
-        for ${this.city}, ${this.country}.`;
-      if ( this.hotelAddress ) userPrompt += `This is the hotel's address: ${this.hotelAddress}`;
+        for ${city}, ${country}.`;
+      if ( hotelAddress ) userPrompt += `This is the hotel's address: ${hotelAddress}`;
 
       const resultCompletionProgramDayLlm = await this.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
       if(!resultCompletionProgramDayLlm.isResolved){
@@ -307,7 +313,7 @@ class ProgramGenerator extends OpenaiClient {
 
       // if the generated program does not have all activities, it will execute again the funtion
       if(program.length != activities.length){
-        return this.completionProgramDay(date, activities, day)
+        return this.generateProgramDay({date, activities, day, city, country, hotelAddress})
       }
 
       /** verify efficiency of program */
@@ -315,7 +321,7 @@ class ProgramGenerator extends OpenaiClient {
       const isRespectingTheRulesEfficiencyProgramDay = resultVerifyProgramDay.data.isRespectingTheRules;
       /** If the result doesn't respect the rules, call the function again. */
       if(resultVerifyProgramDay?.isResolved && !isRespectingTheRulesEfficiencyProgramDay){
-        return this.completionProgramDay(date, activities, day);
+        return this.generateProgramDay({date, activities, day, city, country, hotelAddress});
       }
 
       return {isResolved: true, data: {activities: program, day}}
