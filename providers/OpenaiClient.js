@@ -12,6 +12,8 @@ const loader = new ConfigLoader();
 class OpenaiClient {
 
   async retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema}){
+    if( typeof(systemPrompt) != 'string' ) systemPrompt = JSON.stringify(systemPrompt);
+    if( typeof(userPrompt) != 'string' ) userPrompt = JSON.stringify(userPrompt);
     let failedLLMCalls = 0;
     let result;
     while(failedLLMCalls < 3){
