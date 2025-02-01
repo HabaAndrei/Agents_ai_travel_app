@@ -6,6 +6,7 @@ const {setDoc, getDoc, doc} = require("firebase/firestore");
 const z = require("zod");
 const OpenaiClient = require('../providers/OpenaiClient');
 const Firebase = require('../providers/Firebase');
+const propmts = require('../config/prompts/locationGenerator.json');
 
 class LocationGenerator extends OpenaiClient {
 
@@ -150,16 +151,9 @@ class LocationGenerator extends OpenaiClient {
   async getVisitPackages({place, index, city, country}){
     try{
       // prompts and json schema
-      const systemPrompt = `
-        \n Task: You are an expert providing an estimation of the time required to visit a location and the available packages for visiting that location.
-        \n Important:
-          1. If the location is not known, return this in JSON format: {response: {}}.
-          2. The packages should contain information only about that specific location, without including data from other locations, even if they are nearby, or in the same building.
-          (example: In Burj Khalifa, Dubai, I want the packages to include only Burj Khalifa activities, not the Dubai Mall or the fountain spectacle." )
-          3. The packages should complement each other, as in this example: << 1. Garden visit 2. Lake visit 3. Lake plus Garden visit >>
-      `;
-      const userPrompt = `Place: ${place} from ${city}, ${country}`;
-
+      const systemPrompt = propmts.getVisitPackages.systemPrompt.content;
+      const userPrompt = propmts.getVisitPackages.userPrompt.content
+        .replaceAll("${place}", place).replaceAll("${city}", city).replaceAll("${country}", country);
       const Packages = z.object({
         package_description: z.string().describe('Maxim two sentences'),
         average_visiting_hours: z.number(),
@@ -187,15 +181,14 @@ class LocationGenerator extends OpenaiClient {
 
   /** Verify if the locations are within the proximity area */
   async verifyProximitylocations(locations, prompt){
-    if (typeof locations != 'string') locations = JSON.stringify(locations);
+    if ( typeof(locations) != 'string' ) locations = JSON.stringify(locations);
+    if ( typeof(prompt) != 'string' ) prompt = JSON.stringify(prompt);
     try {
       // prompts and json schema
       this.countVerifyLocations+=1;
-      const userPrompt =  prompt + 'Locations: ' + locations;
-      const systemPrompt = `
-      \n Task: Your task is to verify if all places belong to a specific location. The places can be from the surroundings
-        If even one place is not from that location, the verification should return false, as shown in the example below.
-      `;
+      const systemPrompt = propmts.verifyProximitylocations.systemPrompt.content;
+      const userPrompt = propmts.verifyProximitylocations.userPrompt.content
+        .replaceAll("${prompt}", prompt).replaceAll("${locations}", locations);
       const JsonSchema = z.object({
         response: z.object({
           isRespectingTheRules: z.boolean().describe('true / false'),
@@ -224,32 +217,29 @@ class LocationGenerator extends OpenaiClient {
       this.rejectionReasonForProximityVerification = '';
     }
     try{
+      const userPrompt = propmts.generateLocations.userPrompt.content.replaceAll("${city}", city).replaceAll("${country}", country)
+
       /** Based on the selected activities, the option to visit popular places (or not), and the chat, create a flexible prompt with a JSON schema. */
-      let userPrompt = 'Location: ' + city + '  from  ' + country;
       let categories =  'This is the list of [Activities]: ' +  `${selectedActivities?.length ? selectedActivities?.join(', ') : ''}`
-      +  `${selectedActivities?.length ? ', ' : ' '}` + `${customActivity ? customActivity : ''}`;
+      +  `${selectedActivities?.length ? ', ' : '. '}` + `${customActivity ? customActivity : ''}`;
 
       /** Show multiple places to generate the LLM. */
       let numberOfPlacesPrompt = scaleVisit == '1'  ? '' :
       scaleVisit == '2' ? `Generate at least 6 locations to visit.` : scaleVisit == '3' ? `Generate at least 15 locations to visit.`  : '';
 
-      /** local places or not */
-      let requirememtPrompt = isLocalPlaces === 'true' ? `
-        \n Requirement:  The input should be a request for lesser-known locations. Provide recommendations for places frequented by locals, rather than popular tourist spots.
-        You can get inspiration from local sites or blogs that recommend something like this.
-      ` : '';
+      let systemPrompt = JSON.stringify(propmts.generateLocations.systemPrompt.content)
+        .replaceAll("${numberOfPlacesPrompt}", numberOfPlacesPrompt)
+        .replaceAll("${categories}", categories)
 
-      let systemPrompt = `
-        \n Task: Your goal is to return a list of places I can visit as a tourist, based on a given location and a list of [activities].
-          The locations must not be repeated.  ${numberOfPlacesPrompt}
-        \n Attention: Ensure the locations provided match the given category of interest: ${categories}. ${requirememtPrompt}
-        \n Verification: Ensure that every activity has at least one associated location.
-      `;
+      /** local places or not */
+      if (isLocalPlaces === 'true') {
+        systemPrompt += JSON.stringify(propmts.generateLocations.systemPrompt.contentLocalPlaces)
+      }
 
       /** If the function was rejected, use that argument to create the best prompt. */
       if (this.rejectionReasonForProximityVerification.length) {
-        systemPrompt += `\n Notice: This is the reason why the result wasn t go last time: ${this.rejectionReasonForProximityVerification}.
-        \n <<<<<  Don t repet the same mistakes >>>>> `
+        systemPrompt +=  JSON.stringify(propmts.generateLocations.systemPrompt.contentRejectionReason)
+          .replaceAll("${this.rejectionReasonForProximityVerification}", this.rejectionReasonForProximityVerification);
       }
       /** json schema */
       const UniquePlacesSchema = z.object({

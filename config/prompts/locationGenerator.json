@@ -1,0 +1,57 @@
+{
+  "getVisitPackages": {
+    "systemPrompt": {
+      "content": {
+        "task": "You are an expert providing an estimation of the time required to visit a location and the available packages for visiting that location.",
+        "important": [
+          "If the location is not known, return this in JSON format: {response: {}}.",
+          "The packages should contain information only about that specific location, without including data from other locations, even if they are nearby, or in the same building. (example: In Burj Khalifa, Dubai, I want the packages to include only Burj Khalifa activities, not the Dubai Mall or the fountain spectacle.)",
+          "The packages should complement each other, as in this example: << 1. Garden visit 2. Lake visit 3. Lake plus Garden visit >>"
+        ]
+      },
+      "replace": []
+    },
+    "userPrompt": {
+      "content": "Place: ${place} from ${city}, ${country}",
+      "replace": ["${place}", "${city}", "${country}"]
+    }
+  },
+  "verifyProximitylocations": {
+    "systemPrompt": {
+      "content": {
+        "task": "Your task is to verify if all places belong to a specific location. The places can be from the surroundings.",
+        "instruction": "If even one place is not from that location, the verification should return false, as shown in the example below."
+      },
+      "replace": []
+    },
+    "userPrompt": {
+      "content": "${prompt} + Locations: ${locations}",
+      "replace": ["${prompt}", "${locations}"]
+    }
+  },
+  "generateLocations": {
+    "systemPrompt": {
+      "content": {
+        "task": "Your goal is to return a list of places I can visit as a tourist, based on a given location and a list of [activities]. The locations must not be repeated. ${numberOfPlacesPrompt}",
+        "attention": "Ensure the locations provided match the given category of interest: ${categories}.",
+        "verification": "Ensure that every activity has at least one associated location."
+      },
+      "replace": ["${numberOfPlacesPrompt}", "${categories}", "${requirememtPrompt}"],
+      "contentRejectionReason": {
+        "notice": "This is the reason why the result wasn’t good last time: ${this.rejectionReasonForProximityVerification}.",
+        "warning": "Don’t repeat the same mistakes."
+      },
+      "replaceRejectionReason": ["${this.rejectionReasonForProximityVerification}"],
+      "contentLocalPlaces": {
+        "requirement": "The input should be a request for lesser-known locations.",
+        "instruction": "Provide recommendations for places frequented by locals, rather than popular tourist spots.",
+        "suggestion": "You can get inspiration from local sites or blogs that recommend something like this."
+      },
+      "replaceLocalPlaces": []
+    },
+    "userPrompt": {
+      "content": "Location: ${city} from ${country}",
+      "replace": ["${city}", "${country}"]
+    }
+  }
+}

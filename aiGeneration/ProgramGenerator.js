@@ -2,6 +2,7 @@ const OpenaiClient = require('../providers/OpenaiClient');
 const Firebase = require('../providers/Firebase');
 const z = require("zod");
 const {setDoc, getDoc, doc} = require("firebase/firestore");
+const propmts = require('../config/prompts/programGenerator.json');
 
 class ProgramGenerator extends OpenaiClient {
 
@@ -23,16 +24,16 @@ class ProgramGenerator extends OpenaiClient {
       }
 
       /** prompts and json schema */
-      const systemPrompt =  `
-        Task: Return information in JSON format about a given location, following this structure.
-      `;
+      const systemPrompt = propmts.getDetailsPlace.systemPrompt.content;
+      const userPrompt =  propmts.getDetailsPlace.userPrompt.content
+        .replaceAll("${name}", name).replaceAll("${city}", city).replaceAll("${country}", country);
+
       const JsonSchema = z.object({
         response: z.object({
           description: z.string().describe('A short description of the location, including historical details, no longer than 30 words'),
           info: z.string().describe('Key details about the location, including guidance on how to purchase tickets (excluding price information), no longer than 30 words'),
         })
       })
-      const userPrompt =  `Location: {name: ${name}, From ${city}, ${country}`;
 
       /** Create the request to OpenAI */
       const resultDetailsPlacesLlm = await this.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
@@ -85,11 +86,8 @@ class ProgramGenerator extends OpenaiClient {
     try {
       // prompts and json schema
       this.countVerificationEfficiencyProgram += 1;
-      const systemPrompt =  `
-        Task: Your task is to check if the locations are grouped by days based on their proximity.
-        The program is a visit intinerary. The visit should be very efficient, in order not to return to the same place several times.
-      `;
-      const userPrompt =  `Program: ${program}.`;
+      const systemPrompt =  propmts.verifyEfficiencyProgram.systemPrompt.content;
+      const userPrompt =  propmts.verifyEfficiencyProgram.userPrompt.content.replace("${program}", program);
       const JsonSchema = z.object({
         response: z.object({
           isRespectingTheRules: z.boolean().describe('true / false'),
@@ -150,23 +148,20 @@ class ProgramGenerator extends OpenaiClient {
 
       /** prompts and json schem to create the program */
       const nameIndexAddressLocationsArString = JSON.stringify(nameIndexAddressLocationsAr);
-      let systemPrompt = `
-      \n Objective: You are the best at creating a daily itinerary based on a provided date range and list of locations.
-      \n Task: The main task is to group the location daily to be closer to each other, the visit should be very efficient,
-        in order not to return to the same place several times.
-        If there are fewer activities than days, don t generate my days without activities.
-      \n Cosideration: Include all locations received within the date range, even if there are too many locations per day.
-      \n Important: Make sure you meet all the requirements above, especially the structure.
-      `;
+      let systemPrompt = JSON.stringify(propmts.generateProgram.systemPrompt.content);
       if(this.rejectionReasonForEfficiencyVerification.length){
-        systemPrompt += `\n Notice: This is the reason why the result wasn t good last time: ${this.rejectionReasonForEfficiencyVerification}.
-        \n <<<<<  Don t repet the same mistakes >>>>> `;
+        systemPrompt += JSON.stringify(propmts.generateProgram.systemPrompt.contentRejectionReason)
+          .replaceAll("${this.rejectionReasonForEfficiencyVerification}", this.rejectionReasonForEfficiencyVerification);
       }
-      let userPrompt = `
-        This is an array of objects with their IDs << ${nameIndexAddressLocationsArString} >>
-        The itinerary should be from the dates ${startDate} to ${endDate}, for ${city}, ${country}.
-      `;
-      if ( hotelAddress ) userPrompt += `This is the hotel's address: ${hotelAddress}`;
+
+      let userPrompt = propmts.generateProgram.userPrompt.content
+      .replaceAll("${nameIndexAddressLocationsArString}", nameIndexAddressLocationsArString)
+      .replaceAll("${startDate}", startDate)
+      .replaceAll("${endDate}", endDate)
+      .replaceAll("${city}", city)
+      .replaceAll("${country}", country)
+
+      if ( hotelAddress ) userPrompt += propmts.generateProgram.userPrompt.contentHotelAddress.replaceAll("${hotelAddress}", hotelAddress);
 
       const   Activities = z.object({
         place: z.string().describe('The name of the place e.g. "The Palm Dubai"'),
@@ -274,22 +269,19 @@ class ProgramGenerator extends OpenaiClient {
       // prompts and json schema
       let systemPrompt = '';
       if(activities.length === 1){
-        systemPrompt = `
-          \n Objective: You are a specialist in optimizing travel itineraries based on location schedules.
-          \n Task: Provide me with the location and time as shown in the example below, so that I can visit the location and make a decision based on the schedule.
-          \n Restrictions:
-            Do not add any extra locations to the schedule. Only use the provided location, and avoid modifying it.
-          `;
+        systemPrompt = JSON.stringify(propmts.generateProgramDay.systemPrompt.contentSingle);
       }else{
-        systemPrompt = `
-          \n Task: You receive a day itinerary with multiple tourist locations and your job is to organize these locations into a one-day schedule.
-          \n << Considerations for time at the location: The time I should arrive at the location will be estimated based on the time it takes to get there when it's open, the time I want to spend visiting, and the time lost in traffic during the journey. >>
-          \n Restrictions:
-              Only use the provided list of locations, and avoid modifying them.
-              The order of locations in the schedule should be calculated efficiently, and the next location should always be the one closest to the current location.          >>
-          \n At the end, please check to ensure that all the requirements have been met.
-        `;
+        systemPrompt = JSON.stringify(propmts.generateProgramDay.systemPrompt.contentMultiple);
       }
+
+      let userPrompt = propmts.generateProgramDay.userPrompt.content
+        .replaceAll("${date}", date)
+        .replaceAll("${activities}", JSON.stringify(activities))
+        .replaceAll("${city}", city)
+        .replaceAll("${country}", country)
+
+      if ( hotelAddress ) userPrompt += propmts.generateProgramDay.userPrompt.contentHotelAddress.replaceAll("${hotelAddress}", hotelAddress);
+
       const JsonSchema = z.object({
         response: z.object({
           program: z.array(
@@ -301,9 +293,6 @@ class ProgramGenerator extends OpenaiClient {
           )
         })
       })
-      let userPrompt = `This is the date: ${date}, and this is the itinerary I want to create in the format from the system role example above: ${JSON.stringify(activities)},
-        for ${city}, ${country}.`;
-      if ( hotelAddress ) userPrompt += `This is the hotel's address: ${hotelAddress}`;
 
       const resultCompletionProgramDayLlm = await this.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
       if(!resultCompletionProgramDayLlm.isResolved){
@@ -332,10 +321,11 @@ class ProgramGenerator extends OpenaiClient {
   }
 
   async verifyEfficiencyProgramDay(program){
+    if ( typeof(program) != 'string' ) program = JSON.stringify(program);
     try{
       // prompts and json schema
-      const systemPrompt = `Task: Your task is to verify whether the day program is efficient and avoids returning to the same place multiple times.`;
-      const userPrompt = 'Verify this program: ' + JSON.stringify(program);
+      const systemPrompt = propmts.verifyEfficiencyProgramDay.systemPrompt.content;
+      const userPrompt =  propmts.verifyEfficiencyProgramDay.userPrompt.content.replace("${program}", program);
       const JsonSchema = z.object({
         response: z.object({
           isRespectingTheRules: z.boolean().describe('true / false')

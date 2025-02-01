@@ -1,0 +1,89 @@
+{
+  "getDetailsPlace": {
+    "systemPrompt": {
+      "content": "Task: Return information in JSON format about a given location, following this structure.",
+      "replace": []
+    },
+    "userPrompt": {
+      "content": "Location: {name: ${name}, From ${city}, ${country}",
+      "replace": ["${name}", "${city}", "${country}"]
+    }
+
+  },
+  "verifyEfficiencyProgram": {
+    "systemPrompt": {
+      "content": "Task: Your task is to check if the locations are grouped by days based on their proximity. The program is a visit intinerary. The visit should be very efficient, in order not to return to the same place several times.",
+      "replace": []
+    },
+    "userPrompt": {
+      "content": "Program: ${program}.",
+      "replace": ["${program}"]
+    }
+  },
+  "verifyEfficiencyProgramDay": {
+    "systemPrompt": {
+      "content": "Task: Your task is to verify whether the day program is efficient and avoids returning to the same place multiple times.",
+      "replace": []
+    },
+    "userPrompt": {
+      "content": "Verify this program: ${program}.",
+      "replace": ["${program}"]
+    }
+  },
+  "generateProgram": {
+    "systemPrompt": {
+      "content": {
+        "objective": "You are the best at creating a daily itinerary based on a provided date range and list of locations.",
+        "task": "The main task is to group the locations daily to be closer to each other. The visit should be very efficient, in order not to return to the same place several times.",
+        "rules": [
+          "If there are fewer activities than days, don’t generate days without activities.",
+          "Include all locations received within the date range, even if there are too many locations per day."
+        ],
+        "important": "Make sure you meet all the requirements above, especially the structure."
+      },
+      "replace": [],
+      "contentRejectionReason": {
+        "notice": "This is the reason why the result wasn’t good last time: ${this.rejectionReasonForEfficiencyVerification}.",
+        "warning": "Don’t repeat the same mistakes."
+      },
+      "replaceRejectionReason": ["${this.rejectionReasonForEfficiencyVerification}"]
+
+    },
+    "userPrompt": {
+      "content": "This is an array of objects with their IDs << ${nameIndexAddressLocationsArString} >>. The itinerary should be from the dates ${startDate} to ${endDate}, for ${city}, ${country}. ",
+      "replace": ["${nameIndexAddressLocationsArString}", "${startDate}", "${endDate}", "${city}", "${country}"],
+      "contentHotelAddress": "This is the hotel's address: ${hotelAddress}.",
+      "replaceHotelAddress": ["${hotelAddress}"]
+    }
+  },
+  "generateProgramDay": {
+    "systemPrompt": {
+      "contentSingle": {
+        "objective": "You are a specialist in optimizing travel itineraries based on location schedules.",
+        "task": "Provide me with the location and time as shown in the example below, so that I can visit the location and make a decision based on the schedule.",
+        "restrictions": [
+          "Do not add any extra locations to the schedule.",
+          "Only use the provided location, and avoid modifying it."
+        ]
+      },
+      "replaceSingle": [],
+      "contentMultiple": {
+        "task": "You receive a day itinerary with multiple tourist locations and your job is to organize these locations into a one-day schedule.",
+        "considerations": "The time I should arrive at the location will be estimated based on the time it takes to get there when it's open, the time I want to spend visiting, and the time lost in traffic during the journey.",
+        "restrictions": [
+          "Only use the provided list of locations, and avoid modifying them.",
+          "The order of locations in the schedule should be calculated efficiently, and the next location should always be the one closest to the current location."
+        ],
+        "final_check": "At the end, please check to ensure that all the requirements have been met."
+      },
+      "replaceMultiple": []
+    },
+    "userPrompt": {
+      "content": "This is the date: ${date}, and this is the itinerary I want to create in the format from the system role example above: ${activities} for ${city}, ${country} .",
+      "replace": ["${date}", "${activities}", "${city}", "${country}"],
+      "contentHotelAddress": "This is the hotel's address: ${hotelAddress}",
+      "replaceHotelAddress": ["${hotelAddress}"]
+    }
+  }
+
+}

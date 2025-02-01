@@ -34,6 +34,8 @@ class ChatResponseGenerator extends OpenaiClient {
     try{
       // prompts and the app manual
       const appManual = JSON.stringify(prompts.generateChatResponse.appManual);
+      if ( typeof(appManual) != 'string' ) appManual = JSON.stringify(appManual);
+      if ( typeof(appManual) != 'string' ) tripsData = JSON.stringify(tripsData);
       const systemPromptContent = JSON.stringify(prompts.generateChatResponse.systemPrompt.content)
         .replaceAll("${tripsData}", tripsData).replaceAll("${appManual}", appManual);
 
