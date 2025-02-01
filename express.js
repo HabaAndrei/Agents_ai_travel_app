@@ -1,12 +1,12 @@
 const express = require('express');
 const app = express();
 const cors = require('cors')
-const {ActivityGenerator} = require('./azureFunctions/ActivityGenerator.js');
-const {LocationGenerator} = require('./azureFunctions/LocationGenerator.js');
-const {ProgramGenerator} = require('./azureFunctions/ProgramGenerator.js');
-const {ChatResponseGenerator} = require('./azureFunctions/ChatResponseGenerator.js');
+const {ActivityGenerator} = require('./aiGeneration/ActivityGenerator.js');
+const {LocationGenerator} = require('./aiGeneration/LocationGenerator.js');
+const {ProgramGenerator} = require('./aiGeneration/ProgramGenerator.js');
+const {ChatResponseGenerator} = require('./aiGeneration/ChatResponseGenerator.js');
 const {Mailer} = require('./mailer/Mailer.js')
-const { searchDestination } = require('./azureFunctions/searchDestination.js')
+const { searchDestination } = require('./diverse/searchDestination.js')
 const EmailContentProvider = require('./mailer/EmailContentProvider.js');
 app.use(cors());
 app.use(express.json());

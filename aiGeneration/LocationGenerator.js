@@ -4,8 +4,8 @@ const apiKeyGoogleMaps = API_KEY_GOOGLE_MAP;
 const axios = require('axios');
 const {setDoc, getDoc, doc} = require("firebase/firestore");
 const z = require("zod");
-const OpenaiClient = require('./OpenaiClient');
-const Firebase = require('./Firebase');
+const OpenaiClient = require('../providers/OpenaiClient');
+const Firebase = require('../providers/Firebase');
 
 class LocationGenerator extends OpenaiClient {
 
@@ -38,7 +38,7 @@ class LocationGenerator extends OpenaiClient {
       const detailsPlace = await axios.post('https://maps.googleapis.com/maps/api/place/details/json?fields=photos&place_id=' + place_id +'&key=' + apiKeyGoogleMaps);
       const reference = detailsPlace?.data?.result?.photos?.[0]?.photo_reference;
       /** get image url */
-      const resultUrl = await this.returnImgLink(reference);
+      const resultUrl = await this.getImgLink(reference);
       if (!resultUrl.isResolved) return {'isResolved': false};;
       // store the url in database
       if (resultUrl.url) {
@@ -53,7 +53,7 @@ class LocationGenerator extends OpenaiClient {
   }
 
   /** Return an array without duplicate values, verifying only the 'name' and 'alias' properties. */
-  returnUniqueValesFromArray(array){
+  getUniqueValues(array){
     let newAr = [];
     array.forEach((data)=>{
       const {name, alias} = data;
@@ -64,7 +64,7 @@ class LocationGenerator extends OpenaiClient {
   }
 
   /** this function returns link image for a specific reference, i do this with google api */
-  async returnImgLink(reference){
+  async getImgLink(reference){
     let rezFin = {isResolved: true, url: ''};
     try{
       const data = await axios.get(`https://maps.googleapis.com/maps/api/place/photo?maxwidth=3000&photoreference=`+  reference +`&key=` + apiKeyGoogleMaps)
@@ -77,7 +77,7 @@ class LocationGenerator extends OpenaiClient {
   }
 
   /** This function retrieves location details from the Google Maps API */
-  async locationDetailsFromGoogleApi({place, aliasLocation, description, indexPlace, city, country}){
+  async getLocationDetailsFromGoogleApi({place, aliasLocation, description, indexPlace, city, country}){
     const db = this.firebaseInstance.db;
     try{
       // create the url based on the api specification
@@ -115,7 +115,7 @@ class LocationGenerator extends OpenaiClient {
       /** get image link for each reference */
       let arrayWithLinkImages = [];
       const arrayWithPromisesImages = referincesPhotosArray.map((ref)=>{
-        return this.returnImgLink(ref);
+        return this.getImgLink(ref);
       })
       const arrayWithResponsePromisesImages = await Promise.all(arrayWithPromisesImages);
       for(let rez of arrayWithResponsePromisesImages){
@@ -147,7 +147,7 @@ class LocationGenerator extends OpenaiClient {
   }
 
   /** this function retrive visit packages for a specific location */
-  async visitPackages({place, index, city, country}){
+  async getVisitPackages({place, index, city, country}){
     try{
       // prompts and json schema
       const systemPrompt = `
@@ -281,19 +281,19 @@ class LocationGenerator extends OpenaiClient {
       const {unique_places} = resultLocations;
 
       /** filter only unique places based on 'name' and 'alias' */
-      const arWithNameAliasDescription = this.returnUniqueValesFromArray(unique_places);
+      const arWithNameAliasDescription = this.getUniqueValues(unique_places);
 
       /** get details for each location */
       const arrayWithCalls = arWithNameAliasDescription.map((objectNameAlias, index)=>{
         const {alias, description, name} = objectNameAlias;
-        return this.locationDetailsFromGoogleApi({place: name, aliasLocation: alias, description, indexPlace: index, city, country});
+        return this.getLocationDetailsFromGoogleApi({place: name, aliasLocation: alias, description, indexPlace: index, city, country});
       })
       const dataFromGoogleCalls = await Promise.all(arrayWithCalls);
 
       /** get visit packages for each location */
       const arrayCallsVisitPackages = arWithNameAliasDescription.map((objectNameAlias, index)=>{
         const {alias} = objectNameAlias;
-        return this.visitPackages({place: alias, index, city, country})
+        return this.getVisitPackages({place: alias, index, city, country})
       });
       const dataFromVisitPackages = await Promise.all(arrayCallsVisitPackages);
 

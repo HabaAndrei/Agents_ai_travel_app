@@ -1,5 +1,5 @@
 const z = require("zod");
-const OpenaiClient = require('./OpenaiClient');
+const OpenaiClient = require('../providers/OpenaiClient');
 
 class ChatResponseGenerator extends OpenaiClient {
 

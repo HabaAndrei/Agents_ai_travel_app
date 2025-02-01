@@ -1,10 +1,10 @@
 const z = require("zod");
-const OpenaiClient = require('./OpenaiClient');
+const OpenaiClient = require('../providers/OpenaiClient');
 
 class ActivityGenerator extends OpenaiClient {
 
   /** get specific parameter for location */
-  async paramsAboutLocation({city, country}){
+  async getParamsAboutLocation({city, country}){
     try{
       // prompts and json schema
       const systemPrompt = `
@@ -60,7 +60,7 @@ class ActivityGenerator extends OpenaiClient {
       let resultActivities = resultCreateActivitiesLlm.data;
 
       /** get parameters for locations */
-      const paramsLocation = await this.paramsAboutLocation({city, country});
+      const paramsLocation = await this.getParamsAboutLocation({city, country});
       return paramsLocation.isResolved ? {isResolved: true, data: resultActivities, paramsLocation} : {isResolved: true, data: resultActivities};
     }catch(err){
       return {isResolved: false, err: err?.message};

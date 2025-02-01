@@ -1,5 +1,5 @@
-const OpenaiClient = require('./OpenaiClient');
-const Firebase = require('./Firebase');
+const OpenaiClient = require('../providers/OpenaiClient');
+const Firebase = require('../providers/Firebase');
 const z = require("zod");
 const {setDoc, getDoc, doc} = require("firebase/firestore");
 
