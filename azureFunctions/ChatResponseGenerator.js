@@ -32,7 +32,7 @@ class ChatResponseGenerator extends OpenaiClient {
   }
 
   /** the main function */
-  async generateChatResponse({historyConv, information}){
+  async generateChatResponse({historyConv, tripsData}){
     try{
       // prompts and the app manual
       const appManual = `
@@ -71,7 +71,7 @@ class ChatResponseGenerator extends OpenaiClient {
             << If a user requests to create a travel program, guide them to use the app's features on the "New Trip" screen by searching for the country and city, selecting activities, and generating recommendations.
             For specific locations, suggest entering all desired places directly into the input field for accurate results.
             >>
-            \n Information: Here is the information about trips: ${information}
+            \n Information: Here is the information about trips: ${tripsData}
             \n App Manual: Here is the information about the app manual: ${appManual}
           `
         }

@@ -218,7 +218,7 @@ class LocationGenerator extends OpenaiClient {
   }
 
   /** get locations to visit in a city */
-  async generateLocations({city, country, input, checkbox, isLocalPlaces, scaleVisit, isCalledFirstTime}){
+  async generateLocations({city, country, customActivity, selectedActivities, isLocalPlaces, scaleVisit, isCalledFirstTime}){
     if( isCalledFirstTime ) {
       this.countVerifyLocations = 0;
       this.rejectionReasonForProximityVerification = '';
@@ -226,8 +226,8 @@ class LocationGenerator extends OpenaiClient {
     try{
       /** Based on the selected activities, the option to visit popular places (or not), and the chat, create a flexible prompt with a JSON schema. */
       let userPrompt = 'Location: ' + city + '  from  ' + country;
-      let categories =  'This is the list of [Activities]: ' +  `${checkbox?.length ? this.checkbox?.join(', ') : ''}`
-      +  `${checkbox?.length ? ', ' : ' '}` + `${input ? input : ''}`;
+      let categories =  'This is the list of [Activities]: ' +  `${selectedActivities?.length ? selectedActivities?.join(', ') : ''}`
+      +  `${selectedActivities?.length ? ', ' : ' '}` + `${customActivity ? customActivity : ''}`;
 
       /** Show multiple places to generate the LLM. */
       let numberOfPlacesPrompt = scaleVisit == '1'  ? '' :
@@ -276,7 +276,7 @@ class LocationGenerator extends OpenaiClient {
       /** Execute a maximum of 3 times if the LLM does not provide a location to be included in the acceptance criteria */
       if(resultVerification?.isResolved && !resultVerification?.data && this.countVerifyLocations < 3){
         console.log('is executing again: ', this.countVerifyLocations);
-        return this.generateLocations({city, country, input, checkbox, isLocalPlaces, scaleVisit, isCalledFirstTime: false});
+        return this.generateLocations({city, country, customActivity, selectedActivities, isLocalPlaces, scaleVisit, isCalledFirstTime: false});
       }
       const {unique_places} = resultLocations;
 

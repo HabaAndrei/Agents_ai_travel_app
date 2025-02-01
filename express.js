@@ -32,9 +32,9 @@ function validateFieldsAiGeneration(req, res, next) {
   // methods and their required fields
   const methodsWithFields = {
     'generateActivities': ['city', 'country'],
-    'generateLocations': ['city', 'country', 'input', 'checkbox', 'isLocalPlaces', 'scaleVisit'],
+    'generateLocations': ['city', 'country', 'customActivity', 'selectedActivities', 'isLocalPlaces', 'scaleVisit'],
     'generateProgram': ['startDate', 'endDate', 'city', 'country', 'locations', 'hotelAddress'],
-    'generateChatResponse': ['historyConv', 'information'],
+    'generateChatResponse': ['historyConv', 'tripsData'],
   };
   // if any required field is undefined, return a 404 response
   methodsWithFields[method].forEach((field) => {
@@ -51,8 +51,9 @@ app.post('/ai-generation', validateFieldsAiGeneration, async (req, res)=>{
   const {method} = req.query;
   let rezFinal = '';
 
-  const {startDate, endDate, city, country, locations, input, checkbox, isLocalPlaces,
-    scaleVisit, historyConv, information, hotelAddress} = req.body;
+  const {startDate, endDate, city, country, locations, customActivity, selectedActivities, hotelAddress,
+    isLocalPlaces, scaleVisit, historyConv, tripsData
+  } = req.body;
 
   switch (method) {
     case ('generateActivities') : {
@@ -60,7 +61,7 @@ app.post('/ai-generation', validateFieldsAiGeneration, async (req, res)=>{
       break;
     }
     case ('generateLocations') : {
-      rezFinal = await locationGenerator.generateLocations({city, country, input, checkbox, isLocalPlaces, scaleVisit, isCalledFirstTime: true});
+      rezFinal = await locationGenerator.generateLocations({city, country, customActivity, selectedActivities, isLocalPlaces, scaleVisit, isCalledFirstTime: true});
       break;
     }
     case ('generateProgram') : {
@@ -68,7 +69,7 @@ app.post('/ai-generation', validateFieldsAiGeneration, async (req, res)=>{
       break;
     }
     case ('generateChatResponse') : {
-      rezFinal = await chatResponseGenerator.generateChatResponse({historyConv, information});
+      rezFinal = await chatResponseGenerator.generateChatResponse({historyConv, tripsData});
       break;
     }
   }
