@@ -1,6 +1,6 @@
 const z = require("zod");
 const OpenaiClient = require('../providers/OpenaiClient');
-const prompts = require('../config/prompts/activityGenerator.json');
+const prompts = require('../prompts/activityGenerator.json');
 
 class ActivityGenerator extends OpenaiClient {
 
@@ -8,8 +8,12 @@ class ActivityGenerator extends OpenaiClient {
   async getParamsAboutLocation({city, country}){
     try{
       // prompts and json schema
-      const systemPrompt = prompts.getParamsAboutLocation.systemPrompt.content;
-      const userPrompt = prompts.getParamsAboutLocation.userPrompt.content.replaceAll("${city}", city).replaceAll("${country}", country);
+      const promptsData = this.promptLoader.getPrompt('activityGenerator').getFunction('getParamsAboutLocation');
+      const systemPrompt = promptsData.systemPrompt.content;
+      const userPrompt = this.promptLoader.replace({
+        data: promptsData.userPrompt.content,
+        changes: {"${city}": city, "${country}": country}
+      });
       const JsonSchema = z.object({
         response: z.object({
           data: z.object({
@@ -25,6 +29,7 @@ class ActivityGenerator extends OpenaiClient {
       }
       return {isResolved: true, data: resultParamsAboutLocationLlm?.data?.data};
     }catch(err){
+      console.log(err);
       return {isResolved: false, err: err?.message};
     }
   }
@@ -33,8 +38,12 @@ class ActivityGenerator extends OpenaiClient {
   async generateActivities({city, country}){
     try{
       // prompts and json schema
-      const systemPrompt = prompts.generateActivities.systemPrompt.content;
-      const userPrompt = prompts.generateActivities.userPrompt.content.replaceAll("${city}", city).replaceAll("${country}", country);
+      const promptsData = this.promptLoader.getPrompt('activityGenerator').getFunction('generateActivities');
+      const systemPrompt = promptsData.systemPrompt.content;
+      const userPrompt = this.promptLoader.replace({
+        data: promptsData.userPrompt.content,
+        changes: {"${city}": city, "${country}": country}
+      });
       const JsonSchema = z.object({
         response: z.object({
           activities: z.array(z.string()).describe('Here should be the activities I can do in that location, e.g., [Sport, History, Wellness, etc.]')
@@ -52,9 +61,10 @@ class ActivityGenerator extends OpenaiClient {
       const paramsLocation = await this.getParamsAboutLocation({city, country});
       return paramsLocation.isResolved ? {isResolved: true, data: resultActivities, paramsLocation} : {isResolved: true, data: resultActivities};
     }catch(err){
+      console.log(err);
       return {isResolved: false, err: err?.message};
     }
   }
 }
 
-module.exports = { ActivityGenerator }
+module.exports =  ActivityGenerator

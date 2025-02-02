@@ -5,6 +5,7 @@ const openai_client = new OpenAI({ apiKey: API_KEY_OPENAI });
 const { zodResponseFormat } = require("openai/helpers/zod");
 const ConfigLoader = require('../model/ConfigLoader.js');
 const Firebase = require('./Firebase.js');
+const PromptLoader = require('../prompts/PromptLoader.js');
 
 const loader = new ConfigLoader();
 
@@ -13,6 +14,9 @@ class OpenaiClient extends Firebase {
 
   constructor(){
     super();
+    this.promptLoader = new PromptLoader();
+    // console.log(p.getPrompt('activityGenerator').getFunction('getParamsAboutLocation'));
+
   }
 
   async retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema}){

@@ -1,7 +1,7 @@
 const OpenaiClient = require('../providers/OpenaiClient');
 const z = require("zod");
 const {setDoc, getDoc, doc} = require("firebase/firestore");
-const propmts = require('../config/prompts/programGenerator.json');
+const propmts = require('../prompts/programGenerator.json');
 
 class ProgramGenerator extends OpenaiClient {
 
@@ -337,4 +337,4 @@ class ProgramGenerator extends OpenaiClient {
 
 }
 
-module.exports = { ProgramGenerator }
+module.exports = ProgramGenerator

@@ -5,7 +5,7 @@ const axios = require('axios');
 const {setDoc, getDoc, doc} = require("firebase/firestore");
 const z = require("zod");
 const OpenaiClient = require('../providers/OpenaiClient');
-const propmts = require('../config/prompts/locationGenerator.json');
+const propmts = require('../prompts/locationGenerator.json');
 
 class LocationGenerator extends OpenaiClient {
 
@@ -322,4 +322,4 @@ class LocationGenerator extends OpenaiClient {
 
 }
 
-module.exports = { LocationGenerator }
+module.exports = LocationGenerator

@@ -1,6 +1,6 @@
 const z = require("zod");
 const OpenaiClient = require('../providers/OpenaiClient');
-const prompts = require('../config/prompts/chatResponseGenerator.json');
+const prompts = require('../prompts/chatResponseGenerator.json');
 
 class ChatResponseGenerator extends OpenaiClient {
 
@@ -71,4 +71,4 @@ class ChatResponseGenerator extends OpenaiClient {
   }
 }
 
-module.exports = { ChatResponseGenerator }
+module.exports = ChatResponseGenerator
