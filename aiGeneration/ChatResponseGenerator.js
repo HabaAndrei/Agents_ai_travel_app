@@ -1,6 +1,5 @@
 const z = require("zod");
 const OpenaiClient = require('../providers/OpenaiClient');
-const prompts = require('../prompts/chatResponseGenerator.json');
 
 class ChatResponseGenerator extends OpenaiClient {
 
@@ -8,10 +7,10 @@ class ChatResponseGenerator extends OpenaiClient {
   async acceptOrRejectQuestion(historyConv){
     try{
       // prompts and json schema
-      const promptsData = this.promptLoader.getPrompt('chatResponseGenerator').getFunction('acceptOrRejectQuestion');
-      const systemPrompt = promptsData.systemPrompt.content;
+      const prompts = this.promptLoader.getPrompt('chatResponseGenerator').getFunction('acceptOrRejectQuestion');
+      const systemPrompt = prompts.systemPrompt.content;
       const userPrompt = this.promptLoader.replace({
-        data: promptsData.userPrompt.content,
+        data: prompts.userPrompt.content,
         changes: {"${historyConv}": historyConv}
       });
       const JsonSchema = z.object({
@@ -37,10 +36,10 @@ class ChatResponseGenerator extends OpenaiClient {
   async generateChatResponse({historyConv, tripsData}){
     try{
       // prompts and the app manual
-      const promptsData = this.promptLoader.getPrompt('chatResponseGenerator').getFunction('generateChatResponse');
-      const appManual = promptsData.appManual;
+      const prompts = this.promptLoader.getPrompt('chatResponseGenerator').getFunction('generateChatResponse');
+      const appManual = prompts.appManual;
       const systemPromptContent = this.promptLoader.replace({
-        data: promptsData.systemPrompt.content,
+        data: prompts.systemPrompt.content,
         changes: {"${tripsData}": tripsData, "${appManual}": appManual}
       });
       let messages = [
@@ -70,6 +69,7 @@ class ChatResponseGenerator extends OpenaiClient {
       if(!rez.isResolved) return {isResolved: true, data: "Information not available."}
       return {isResolved: true, data: rez.data}
     }catch(err){
+      console.log(err);
       return {isResolved: false, err: err?.message};
     }
   }

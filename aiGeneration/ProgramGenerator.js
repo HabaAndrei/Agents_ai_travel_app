@@ -1,7 +1,6 @@
 const OpenaiClient = require('../providers/OpenaiClient');
 const z = require("zod");
 const {setDoc, getDoc, doc} = require("firebase/firestore");
-const propmts = require('../prompts/programGenerator.json');
 
 class ProgramGenerator extends OpenaiClient {
 
@@ -17,9 +16,12 @@ class ProgramGenerator extends OpenaiClient {
       }
 
       /** prompts and json schema */
-      const systemPrompt = propmts.getDetailsPlace.systemPrompt.content;
-      const userPrompt =  propmts.getDetailsPlace.userPrompt.content
-        .replaceAll("${name}", name).replaceAll("${city}", city).replaceAll("${country}", country);
+      const prompts = this.promptLoader.getPrompt('programGenerator').getFunction('getDetailsPlace');
+      const systemPrompt = prompts.systemPrompt.content;
+      const userPrompt = this.promptLoader.replace({
+        data: prompts.userPrompt.content,
+        changes: {"${name}": name, "${city}": city, "${country}": country}
+      });
 
       const JsonSchema = z.object({
         response: z.object({
@@ -77,10 +79,15 @@ class ProgramGenerator extends OpenaiClient {
   async verifyEfficiencyProgram(program){
     if (typeof program != 'string') program = JSON.stringify(program);
     try {
-      // prompts and json schema
       this.countVerificationEfficiencyProgram += 1;
-      const systemPrompt =  propmts.verifyEfficiencyProgram.systemPrompt.content;
-      const userPrompt =  propmts.verifyEfficiencyProgram.userPrompt.content.replace("${program}", program);
+      // prompts and json schema
+      const prompts = this.promptLoader.getPrompt('programGenerator').getFunction('verifyEfficiencyProgram');
+      const systemPrompt = prompts.systemPrompt.content;
+      const userPrompt = this.promptLoader.replace({
+        data: prompts.userPrompt.content,
+        changes: {"${program}": program}
+      });
+
       const JsonSchema = z.object({
         response: z.object({
           isRespectingTheRules: z.boolean().describe('true / false'),
@@ -138,23 +145,36 @@ class ProgramGenerator extends OpenaiClient {
         locations[ob.id].description = ob.description;
         locations[ob.id].info = ob.info;
       })
+      const nameIndexAddressLocationsArString = JSON.stringify(nameIndexAddressLocationsAr);
 
       /** prompts and json schem to create the program */
-      const nameIndexAddressLocationsArString = JSON.stringify(nameIndexAddressLocationsAr);
-      let systemPrompt = JSON.stringify(propmts.generateProgram.systemPrompt.content);
+      const prompts = this.promptLoader.getPrompt('programGenerator').getFunction('generateProgram');
+      let systemPrompt = prompts.systemPrompt.content;
+      let userPrompt = this.promptLoader.replace({
+        data: prompts.userPrompt.content,
+        changes: {
+          "${nameIndexAddressLocationsArString}": nameIndexAddressLocationsArString,
+          "${startDate}": startDate,
+          "${endDate}": endDate,
+          "${city}": city,
+          "${country}": country
+        }
+      });
+
+      ///////////////////////////////////
       if(this.rejectionReasonForEfficiencyVerification.length){
-        systemPrompt += JSON.stringify(propmts.generateProgram.systemPrompt.contentRejectionReason)
-          .replaceAll("${this.rejectionReasonForEfficiencyVerification}", this.rejectionReasonForEfficiencyVerification);
+        systemPrompt += this.promptLoader.replace({
+          data: prompts.systemPrompt.contentRejectionReason,
+          changes: {"${this.rejectionReasonForEfficiencyVerification}": this.rejectionReasonForEfficiencyVerification}
+        });
       }
 
-      let userPrompt = propmts.generateProgram.userPrompt.content
-      .replaceAll("${nameIndexAddressLocationsArString}", nameIndexAddressLocationsArString)
-      .replaceAll("${startDate}", startDate)
-      .replaceAll("${endDate}", endDate)
-      .replaceAll("${city}", city)
-      .replaceAll("${country}", country)
-
-      if ( hotelAddress ) userPrompt += propmts.generateProgram.userPrompt.contentHotelAddress.replaceAll("${hotelAddress}", hotelAddress);
+      if ( hotelAddress ) {
+        userPrompt += this.promptLoader.replace({
+          data: prompts.userPrompt.contentHotelAddress,
+          changes: {"${hotelAddress}": hotelAddress}
+        });
+      }
 
       const   Activities = z.object({
         place: z.string().describe('The name of the place e.g. "The Palm Dubai"'),
@@ -260,20 +280,29 @@ class ProgramGenerator extends OpenaiClient {
   async generateProgramDay({date, activities, day, city, country, hotelAddress}){
     try{
       // prompts and json schema
-      let systemPrompt = '';
+      const prompts = this.promptLoader.getPrompt('programGenerator').getFunction('generateProgramDay');
+      let systemPrompt = "";
       if(activities.length === 1){
-        systemPrompt = JSON.stringify(propmts.generateProgramDay.systemPrompt.contentSingle);
+        systemPrompt = JSON.stringify(prompts.systemPrompt.contentSingle);
       }else{
-        systemPrompt = JSON.stringify(propmts.generateProgramDay.systemPrompt.contentMultiple);
+        systemPrompt = JSON.stringify(prompts.systemPrompt.contentMultiple);
       }
 
-      let userPrompt = propmts.generateProgramDay.userPrompt.content
-        .replaceAll("${date}", date)
-        .replaceAll("${activities}", JSON.stringify(activities))
-        .replaceAll("${city}", city)
-        .replaceAll("${country}", country)
-
-      if ( hotelAddress ) userPrompt += propmts.generateProgramDay.userPrompt.contentHotelAddress.replaceAll("${hotelAddress}", hotelAddress);
+      let userPrompt = this.promptLoader.replace({
+        data: prompts.userPrompt.content,
+        changes: {
+          "${date}": date,
+          "${activities}": activities,
+          "${city}": city,
+          "${country}": country
+        }
+      });
+      if ( hotelAddress ) {
+        userPrompt += this.promptLoader.replace({
+          data: prompts.userPrompt.contentHotelAddress,
+          changes: {"${hotelAddress}": hotelAddress}
+        });
+      };
 
       const JsonSchema = z.object({
         response: z.object({
@@ -317,8 +346,13 @@ class ProgramGenerator extends OpenaiClient {
     if ( typeof(program) != 'string' ) program = JSON.stringify(program);
     try{
       // prompts and json schema
-      const systemPrompt = propmts.verifyEfficiencyProgramDay.systemPrompt.content;
-      const userPrompt =  propmts.verifyEfficiencyProgramDay.userPrompt.content.replace("${program}", program);
+      const prompts = this.promptLoader.getPrompt('programGenerator').getFunction('verifyEfficiencyProgramDay');
+      const systemPrompt = prompts.systemPrompt.content;
+      const userPrompt = this.promptLoader.replace({
+        data: prompts.userPrompt.content,
+        changes: {"${program}": program}
+      });
+
       const JsonSchema = z.object({
         response: z.object({
           isRespectingTheRules: z.boolean().describe('true / false')

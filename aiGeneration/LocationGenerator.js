@@ -5,7 +5,6 @@ const axios = require('axios');
 const {setDoc, getDoc, doc} = require("firebase/firestore");
 const z = require("zod");
 const OpenaiClient = require('../providers/OpenaiClient');
-const propmts = require('../prompts/locationGenerator.json');
 
 class LocationGenerator extends OpenaiClient {
 
@@ -143,15 +142,18 @@ class LocationGenerator extends OpenaiClient {
   async getVisitPackages({place, index, city, country}){
     try{
       // prompts and json schema
-      const systemPrompt = propmts.getVisitPackages.systemPrompt.content;
-      const userPrompt = propmts.getVisitPackages.userPrompt.content
-        .replaceAll("${place}", place).replaceAll("${city}", city).replaceAll("${country}", country);
+      const prompts = this.promptLoader.getPrompt('locationGenerator').getFunction('getVisitPackages');
+      const systemPrompt = prompts.systemPrompt.content;
+      const userPrompt = this.promptLoader.replace({
+        data: prompts.userPrompt.content,
+        changes: {"${place}": place, "${city}": city, "${country}": country}
+      });
+
       const Packages = z.object({
         package_description: z.string().describe('Maxim two sentences'),
         average_visiting_hours: z.number(),
         selected: z.boolean().describe('allways false')
       })
-
       const JsonSchema = z.object({
         response: z.object({
           average_hours_visiting_full_location: z.number(),
@@ -173,14 +175,16 @@ class LocationGenerator extends OpenaiClient {
 
   /** Verify if the locations are within the proximity area */
   async verifyProximitylocations(locations, prompt){
-    if ( typeof(locations) != 'string' ) locations = JSON.stringify(locations);
-    if ( typeof(prompt) != 'string' ) prompt = JSON.stringify(prompt);
     try {
-      // prompts and json schema
       this.countVerifyLocations+=1;
-      const systemPrompt = propmts.verifyProximitylocations.systemPrompt.content;
-      const userPrompt = propmts.verifyProximitylocations.userPrompt.content
-        .replaceAll("${prompt}", prompt).replaceAll("${locations}", locations);
+
+      // prompts and json schema
+      const prompts = this.promptLoader.getPrompt('locationGenerator').getFunction('verifyProximitylocations');
+      const systemPrompt = prompts.systemPrompt.content;
+      const userPrompt = this.promptLoader.replace({
+        data: prompts.userPrompt.content,
+        changes: {"${prompt}": prompt, "${locations}": locations}
+      });
       const JsonSchema = z.object({
         response: z.object({
           isRespectingTheRules: z.boolean().describe('true / false'),
@@ -209,7 +213,12 @@ class LocationGenerator extends OpenaiClient {
       this.rejectionReasonForProximityVerification = '';
     }
     try{
-      const userPrompt = propmts.generateLocations.userPrompt.content.replaceAll("${city}", city).replaceAll("${country}", country)
+
+      const prompts = this.promptLoader.getPrompt('locationGenerator').getFunction('generateLocations');
+      const userPrompt = this.promptLoader.replace({
+        data: prompts.userPrompt.content,
+        changes: {"${city}": city, "${country}": country}
+      });
 
       /** Based on the selected activities, the option to visit popular places (or not), and the chat, create a flexible prompt with a JSON schema. */
       let categories =  'This is the list of [Activities]: ' +  `${selectedActivities?.length ? selectedActivities?.join(', ') : ''}`
@@ -219,19 +228,25 @@ class LocationGenerator extends OpenaiClient {
       let numberOfPlacesPrompt = scaleVisit == '1'  ? '' :
       scaleVisit == '2' ? `Generate at least 6 locations to visit.` : scaleVisit == '3' ? `Generate at least 15 locations to visit.`  : '';
 
-      let systemPrompt = JSON.stringify(propmts.generateLocations.systemPrompt.content)
-        .replaceAll("${numberOfPlacesPrompt}", numberOfPlacesPrompt)
-        .replaceAll("${categories}", categories)
+      let systemPrompt = this.promptLoader.replace({
+        data: prompts.systemPrompt.content,
+        changes: {
+          "${numberOfPlacesPrompt}": numberOfPlacesPrompt,
+          "${categories}": categories
+        }
+      });
 
       /** local places or not */
       if (isLocalPlaces === 'true') {
-        systemPrompt += JSON.stringify(propmts.generateLocations.systemPrompt.contentLocalPlaces)
+        systemPrompt += JSON.stringify(prompts.systemPrompt.contentLocalPlaces)
       }
 
       /** If the function was rejected, use that argument to create the best prompt. */
       if (this.rejectionReasonForProximityVerification.length) {
-        systemPrompt +=  JSON.stringify(propmts.generateLocations.systemPrompt.contentRejectionReason)
-          .replaceAll("${this.rejectionReasonForProximityVerification}", this.rejectionReasonForProximityVerification);
+        systemPrompt += this.promptLoader.replace({
+          data: prompts.systemPrompt.contentRejectionReason,
+          changes: {"${this.rejectionReasonForProximityVerification}": this.rejectionReasonForProximityVerification}
+        });
       }
       /** json schema */
       const UniquePlacesSchema = z.object({
