@@ -7,10 +7,13 @@ class ChatResponseGenerator extends OpenaiClient {
   /** function that accept or refuze the question */
   async acceptOrRejectQuestion(historyConv){
     try{
-      if(typeof(historyConv) != 'string')historyConv = JSON.stringify(historyConv);
       // prompts and json schema
-      const systemPrompt = prompts.acceptOrRejectQuestion.systemPrompt.content;
-      const userPrompt = prompts.acceptOrRejectQuestion.userPrompt.content.replaceAll("${historyConv}", historyConv);
+      const promptsData = this.promptLoader.getPrompt('chatResponseGenerator').getFunction('acceptOrRejectQuestion');
+      const systemPrompt = promptsData.systemPrompt.content;
+      const userPrompt = this.promptLoader.replace({
+        data: promptsData.userPrompt.content,
+        changes: {"${historyConv}": historyConv}
+      });
       const JsonSchema = z.object({
         response: z.object({
           is_correct_question: z.boolean().describe('true / false')
@@ -25,6 +28,7 @@ class ChatResponseGenerator extends OpenaiClient {
       const data = resultContent?.is_correct_question;
       return {isResolved: true, data};
     }catch(err){
+      console.log(err);
       return {isResolved: false, err: err?.message};
     }
   }
@@ -33,12 +37,12 @@ class ChatResponseGenerator extends OpenaiClient {
   async generateChatResponse({historyConv, tripsData}){
     try{
       // prompts and the app manual
-      const appManual = JSON.stringify(prompts.generateChatResponse.appManual);
-      if ( typeof(appManual) != 'string' ) appManual = JSON.stringify(appManual);
-      if ( typeof(appManual) != 'string' ) tripsData = JSON.stringify(tripsData);
-      const systemPromptContent = JSON.stringify(prompts.generateChatResponse.systemPrompt.content)
-        .replaceAll("${tripsData}", tripsData).replaceAll("${appManual}", appManual);
-
+      const promptsData = this.promptLoader.getPrompt('chatResponseGenerator').getFunction('generateChatResponse');
+      const appManual = promptsData.appManual;
+      const systemPromptContent = this.promptLoader.replace({
+        data: promptsData.systemPrompt.content,
+        changes: {"${tripsData}": tripsData, "${appManual}": appManual}
+      });
       let messages = [
         {
           role: 'system',

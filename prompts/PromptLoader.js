@@ -29,7 +29,7 @@ class PromptLoader {
   replace ({data, changes}) {
     if ( typeof data != 'string' ) data = JSON.stringify(data);
     Object.keys(changes).forEach((key)=>{
-      const value = changes[key];
+      let value = changes[key];
       if( typeof value != 'string') value = JSON.stringify(value);
       if( typeof key != 'string') key = JSON.stringify(key);
       data = data.replaceAll(key, value);

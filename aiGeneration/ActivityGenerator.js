@@ -1,6 +1,5 @@
 const z = require("zod");
 const OpenaiClient = require('../providers/OpenaiClient');
-const prompts = require('../prompts/activityGenerator.json');
 
 class ActivityGenerator extends OpenaiClient {
 
@@ -8,10 +7,10 @@ class ActivityGenerator extends OpenaiClient {
   async getParamsAboutLocation({city, country}){
     try{
       // prompts and json schema
-      const promptsData = this.promptLoader.getPrompt('activityGenerator').getFunction('getParamsAboutLocation');
-      const systemPrompt = promptsData.systemPrompt.content;
+      const prompts = this.promptLoader.getPrompt('activityGenerator').getFunction('getParamsAboutLocation');
+      const systemPrompt = prompts.systemPrompt.content;
       const userPrompt = this.promptLoader.replace({
-        data: promptsData.userPrompt.content,
+        data: prompts.userPrompt.content,
         changes: {"${city}": city, "${country}": country}
       });
       const JsonSchema = z.object({
@@ -38,10 +37,10 @@ class ActivityGenerator extends OpenaiClient {
   async generateActivities({city, country}){
     try{
       // prompts and json schema
-      const promptsData = this.promptLoader.getPrompt('activityGenerator').getFunction('generateActivities');
-      const systemPrompt = promptsData.systemPrompt.content;
+      const prompts = this.promptLoader.getPrompt('activityGenerator').getFunction('generateActivities');
+      const systemPrompt = prompts.systemPrompt.content;
       const userPrompt = this.promptLoader.replace({
-        data: promptsData.userPrompt.content,
+        data: prompts.userPrompt.content,
         changes: {"${city}": city, "${country}": country}
       });
       const JsonSchema = z.object({
