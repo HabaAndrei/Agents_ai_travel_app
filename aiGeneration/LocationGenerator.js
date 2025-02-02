@@ -5,24 +5,17 @@ const axios = require('axios');
 const {setDoc, getDoc, doc} = require("firebase/firestore");
 const z = require("zod");
 const OpenaiClient = require('../providers/OpenaiClient');
-const Firebase = require('../providers/Firebase');
 const propmts = require('../config/prompts/locationGenerator.json');
 
 class LocationGenerator extends OpenaiClient {
 
-  constructor(){
-    super();
-    this.firebaseInstance = new Firebase();
-  }
-
   /** get image of the city */
   async getUrlImageCity({city,  country}){
     try{
-      const db = this.firebaseInstance.db;
       const location = [city, country].join(' ');
 
       /** verify if exist in database */
-      const docRef = doc(db, "image_places", location);
+      const docRef = doc(this.db, "image_places", location);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         const data = docSnap.data();
@@ -43,7 +36,7 @@ class LocationGenerator extends OpenaiClient {
       if (!resultUrl.isResolved) return {'isResolved': false};;
       // store the url in database
       if (resultUrl.url) {
-        if(place_id)setDoc(doc(db, "image_places", location), {url: resultUrl.url});
+        if(place_id)setDoc(doc(this.db, "image_places", location), {url: resultUrl.url});
         return {'isResolved': true, url: resultUrl.url};
       }else{
         return {'isResolved': false}
@@ -79,7 +72,6 @@ class LocationGenerator extends OpenaiClient {
 
   /** This function retrieves location details from the Google Maps API */
   async getLocationDetailsFromGoogleApi({place, aliasLocation, description, indexPlace, city, country}){
-    const db = this.firebaseInstance.db;
     try{
       // create the url based on the api specification
       const input = [place, description, 'like', aliasLocation, 'City:', city, 'Country:', country].join('%20');
@@ -95,7 +87,7 @@ class LocationGenerator extends OpenaiClient {
 
       /** If the place already exists in the database, I send the data from the database */
       if(place_id){
-        const docRef = doc(db, "places", place_id);
+        const docRef = doc(this.db, "places", place_id);
         const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
@@ -137,7 +129,7 @@ class LocationGenerator extends OpenaiClient {
       }
 
       /** save the place in database */
-      if(place_id)setDoc(doc(db, "places", place_id), obData);
+      if(place_id)setDoc(doc(this.db, "places", place_id), obData);
 
       // send the result
       return {isResolved: true, data: obData, index: indexPlace}

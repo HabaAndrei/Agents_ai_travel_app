@@ -4,12 +4,16 @@ const {API_KEY_OPENAI} = process.env;
 const openai_client = new OpenAI({ apiKey: API_KEY_OPENAI });
 const { zodResponseFormat } = require("openai/helpers/zod");
 const ConfigLoader = require('../model/ConfigLoader.js');
-
+const Firebase = require('./Firebase.js');
 
 const loader = new ConfigLoader();
 
 /** base class for particular instances of LLM clients */
-class OpenaiClient {
+class OpenaiClient extends Firebase {
+
+  constructor(){
+    super();
+  }
 
   async retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema}){
     if( typeof(systemPrompt) != 'string' ) systemPrompt = JSON.stringify(systemPrompt);

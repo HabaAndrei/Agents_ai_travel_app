@@ -1,6 +1,7 @@
 const express = require('express');
 const app = express();
 const cors = require('cors')
+const OpenaiClient = require('./providers/OpenaiClient.js');
 const {ActivityGenerator} = require('./aiGeneration/ActivityGenerator.js');
 const {LocationGenerator} = require('./aiGeneration/LocationGenerator.js');
 const {ProgramGenerator} = require('./aiGeneration/ProgramGenerator.js');
@@ -13,6 +14,7 @@ app.use(cors());
 app.use(express.json());
 
 // instances of classes
+const openaiClient = new OpenaiClient();
 const activityGeneratior = new ActivityGenerator();
 const locationGenerator = new LocationGenerator();
 const programGenerator = new ProgramGenerator();

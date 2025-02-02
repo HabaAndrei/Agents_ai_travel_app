@@ -1,22 +1,15 @@
 const OpenaiClient = require('../providers/OpenaiClient');
-const Firebase = require('../providers/Firebase');
 const z = require("zod");
 const {setDoc, getDoc, doc} = require("firebase/firestore");
 const propmts = require('../config/prompts/programGenerator.json');
 
 class ProgramGenerator extends OpenaiClient {
 
-  constructor(){
-    super();
-    this.firebaseInstance = new Firebase();
-  }
-
   /** get details for a specific location */
   async getDetailsPlace({name, id, place_id, city, country}){
-    const db = this.firebaseInstance.db;
     try{
       // If the place already exists in the database, I send the data from the database
-      const docRef = doc(db, "details_places", place_id);
+      const docRef = doc(this.db, "details_places", place_id);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         const data = docSnap.data();
@@ -42,7 +35,7 @@ class ProgramGenerator extends OpenaiClient {
       }
       let result = resultDetailsPlacesLlm.data;
       // store data into db
-      setDoc(doc(db, "details_places", place_id), result)
+      setDoc(doc(this.db, "details_places", place_id), result)
       // send the result based on the information received.
       return {isResolved: true, ...result, id};
     }catch(err){
