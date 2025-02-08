@@ -6,30 +6,35 @@ class ProgramGenerator extends OpenaiClient {
 
   /** get details for a specific location */
   async getDetailsPlace({name, id, place_id, city, country}){
-    try{
-      // If the place already exists in the database, I send the data from the database
-      const docRef = doc(this.db, "details_places", place_id);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        return {isResolved: true, ...data, id};
-      }
+    // If the place already exists in the database, I send the data from the database
+    const docRef = doc(this.db, "details_places", place_id);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      return {isResolved: true, ...data, id};
+    }
 
+    let systemPrompt, userPrompt, JsonSchema = '';
+    try{
       /** prompts and json schema */
       const prompts = this.promptLoader.getPrompt('programGenerator').getFunction('getDetailsPlace');
-      const systemPrompt = prompts.systemPrompt.content;
-      const userPrompt = this.promptLoader.replace({
+      systemPrompt = prompts.systemPrompt.content;
+      userPrompt = this.promptLoader.replace({
         data: prompts.userPrompt.content,
         changes: {"${name}": name, "${city}": city, "${country}": country}
       });
 
-      const JsonSchema = z.object({
+      JsonSchema = z.object({
         response: z.object({
           description: z.string().describe('A short description of the location, including historical details, no longer than 30 words'),
           info: z.string().describe('Key details about the location, including guidance on how to purchase tickets (excluding price information), no longer than 30 words'),
         })
       })
+    }catch(err){
+      return this.promptLoader.handleErrorPrompt(err, 'COD_01_P');
+    }
 
+    try{
       /** Create the request to OpenAI */
       const resultDetailsPlacesLlm = await OpenaiClient.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
       if(!resultDetailsPlacesLlm.isResolved){
@@ -78,22 +83,29 @@ class ProgramGenerator extends OpenaiClient {
   /** this function verifies if the program is efficient */
   async verifyEfficiencyProgram(program){
     if (typeof program != 'string') program = JSON.stringify(program);
-    try {
-      this.countVerificationEfficiencyProgram += 1;
-      // prompts and json schema
+    this.countVerificationEfficiencyProgram += 1;
+
+    // prompts and json schema
+    let systemPrompt, userPrompt, JsonSchema = '';
+    try{
       const prompts = this.promptLoader.getPrompt('programGenerator').getFunction('verifyEfficiencyProgram');
-      const systemPrompt = prompts.systemPrompt.content;
-      const userPrompt = this.promptLoader.replace({
+      systemPrompt = prompts.systemPrompt.content;
+      userPrompt = this.promptLoader.replace({
         data: prompts.userPrompt.content,
         changes: {"${program}": program}
       });
 
-      const JsonSchema = z.object({
+      JsonSchema = z.object({
         response: z.object({
           isRespectingTheRules: z.boolean().describe('true / false'),
           reason: z.string().describe('This should contain a reason only if isRespectingTheRules is false; otherwise, it can be an empty string.')
         })
       })
+    }catch(err){
+      return this.promptLoader.handleErrorPrompt(err, 'COD_02_P');
+    }
+
+    try {
       /** Create the request to OpenAI and send the result based on the information received. */
       const resultEfficiencyProgramLlm = await OpenaiClient.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
       if(!resultEfficiencyProgramLlm.isResolved){
@@ -117,40 +129,48 @@ class ProgramGenerator extends OpenaiClient {
       this.rejectionReasonForEfficiencyVerification = '';
     }
 
-    try{
-      // array of locations with name, address and dataTimeLocation
-      const nameIndexAddressLocationsAr = locations.map((ob, index)=>{
-        const {name, address, dataTimeLocation} = ob;
-        return {name, address, dataTimeLocation, id: index}
-      });
+    // array of locations with name, address and dataTimeLocation
+    const nameIndexAddressLocationsAr = locations.map((ob, index)=>{
+      const {name, address, dataTimeLocation} = ob;
+      return {name, address, dataTimeLocation, id: index}
+    });
 
-      /** array of locations with name and index */
-      const nameIndexLocationsAr = locations.map((_location, index)=>{
-        return {name: _location.name, index}
-      });
+    /** array of locations with name and index */
+    const nameIndexLocationsAr = locations.map((_location, index)=>{
+      return {name: _location.name, index}
+    });
 
-      /** for each location get details */
-      const arrayPromisesDetails = locations.map((_location, index)=>{
-        return this.getDetailsPlace({
-          name: _location.name,
-          id: index,
-          place_id: _location.place_id,
-          city, country
-        })
+    /** for each location get details */
+    const arrayPromisesDetails = locations.map((_location, index)=>{
+      return this.getDetailsPlace({
+        name: _location.name,
+        id: index,
+        place_id: _location.place_id,
+        city, country
       })
-      const rezArrayPromisesDetails = await Promise.all(arrayPromisesDetails);
+    })
+
+    let rezArrayPromisesDetails;
+    try{
+      rezArrayPromisesDetails = await Promise.all(arrayPromisesDetails);
       /** populate the main locations with details like description and info */
       rezArrayPromisesDetails.forEach((ob)=>{
         if(!ob.isResolved)return;
         locations[ob.id].description = ob.description;
         locations[ob.id].info = ob.info;
       })
-      const nameIndexAddressLocationsArString = JSON.stringify(nameIndexAddressLocationsAr);
+    }catch(err){
+      return {isResolved: false, err: err?.message};
+    }
+    const nameIndexAddressLocationsArString = JSON.stringify(nameIndexAddressLocationsAr);
 
+
+    let systemPrompt, userPrompt, JsonSchema = '';
+    try{
       /** prompts and json schem to create the program */
       const prompts = this.promptLoader.getPrompt('programGenerator').getFunction('generateProgram');
-      let systemPrompt = prompts.systemPrompt.content;
-      let userPrompt = this.promptLoader.replace({
+      systemPrompt = prompts.systemPrompt.content;
+      userPrompt = this.promptLoader.replace({
         data: prompts.userPrompt.content,
         changes: {
           "${nameIndexAddressLocationsArString}": nameIndexAddressLocationsArString,
@@ -176,7 +196,7 @@ class ProgramGenerator extends OpenaiClient {
         });
       }
 
-      const   Activities = z.object({
+      const Activities = z.object({
         place: z.string().describe('The name of the place e.g. "The Palm Dubai"'),
         id: z.number().describe('Here, give me the ID that corresponds to the location from the input')
       });
@@ -186,12 +206,16 @@ class ProgramGenerator extends OpenaiClient {
         date: z.string().describe('e.g. "2024-09-15"'),
         activities: z.array(Activities)
       });
-      const JsonSchema = z.object({
+      JsonSchema = z.object({
         response: z.object({
           program: z.array(Days)
         })
       });
+    }catch(err){
+      return this.promptLoader.handleErrorPrompt(err, 'COD_03_P');
+    }
 
+    try{
       /** create the program */
       const resultProgramLlm = await OpenaiClient.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
       if(!resultProgramLlm.isResolved){
@@ -278,17 +302,18 @@ class ProgramGenerator extends OpenaiClient {
 
   /** order location for each day */
   async generateProgramDay({date, activities, day, city, country, hotelAddress}){
+    // prompts and json schema
+    let systemPrompt, userPrompt, JsonSchema = '';
     try{
-      // prompts and json schema
       const prompts = this.promptLoader.getPrompt('programGenerator').getFunction('generateProgramDay');
-      let systemPrompt = "";
+      systemPrompt = "";
       if(activities.length === 1){
         systemPrompt = JSON.stringify(prompts.systemPrompt.contentSingle);
       }else{
         systemPrompt = JSON.stringify(prompts.systemPrompt.contentMultiple);
       }
 
-      let userPrompt = this.promptLoader.replace({
+      userPrompt = this.promptLoader.replace({
         data: prompts.userPrompt.content,
         changes: {
           "${date}": date,
@@ -304,7 +329,7 @@ class ProgramGenerator extends OpenaiClient {
         });
       };
 
-      const JsonSchema = z.object({
+      JsonSchema = z.object({
         response: z.object({
           program: z.array(
             z.object({
@@ -315,7 +340,11 @@ class ProgramGenerator extends OpenaiClient {
           )
         })
       })
+    }catch(err){
+      return this.promptLoader.handleErrorPrompt(err, 'COD_04_P');
+    }
 
+    try{
       const resultCompletionProgramDayLlm = await OpenaiClient.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
       if(!resultCompletionProgramDayLlm.isResolved){
         return {isResolved: false, err: resultCompletionProgramDayLlm?.err};
@@ -344,20 +373,26 @@ class ProgramGenerator extends OpenaiClient {
 
   async verifyEfficiencyProgramDay(program){
     if ( typeof(program) != 'string' ) program = JSON.stringify(program);
+    // prompts and json schema
+    let systemPrompt, userPrompt, JsonSchema = '';
     try{
-      // prompts and json schema
       const prompts = this.promptLoader.getPrompt('programGenerator').getFunction('verifyEfficiencyProgramDay');
-      const systemPrompt = prompts.systemPrompt.content;
-      const userPrompt = this.promptLoader.replace({
+      systemPrompt = prompts.systemPrompt.content;
+      userPrompt = this.promptLoader.replace({
         data: prompts.userPrompt.content,
         changes: {"${program}": program}
       });
 
-      const JsonSchema = z.object({
+      JsonSchema = z.object({
         response: z.object({
           isRespectingTheRules: z.boolean().describe('true / false')
         })
       })
+    }catch(err){
+      return this.promptLoader.handleErrorPrompt(err, 'COD_05_P');
+    }
+
+    try{
       const resultVerifyProgramDayLlm = await OpenaiClient.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
       if(!resultVerifyProgramDayLlm.isResolved){
         return {isResolved: false};

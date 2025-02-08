@@ -24,11 +24,11 @@ class LocationGenerator extends OpenaiClient {
       // call google api to get the image
       const requestFormat = location.replaceAll(' ', '%20');
       /** get id o the place */
-      const data = await axios.post('https://maps.googleapis.com/maps/api/place/findplacefromtext/json?fields=place_id&input=' + requestFormat + '&inputtype=textquery&key=' + apiKeyGoogleMaps);
+      const data = await axios.post(`https://maps.googleapis.com/maps/api/place/findplacefromtext/json?fields=place_id&input=${requestFormat}&inputtype=textquery&key=${apiKeyGoogleMaps}`);
       const place_id = data?.data?.candidates?.[0]?.place_id;
       if ( !place_id ) return {'isResolved': false};
       /** get image's reference */
-      const detailsPlace = await axios.post('https://maps.googleapis.com/maps/api/place/details/json?fields=photos&place_id=' + place_id +'&key=' + apiKeyGoogleMaps);
+      const detailsPlace = await axios.post(`https://maps.googleapis.com/maps/api/place/details/json?fields=photos&place_id=${place_id}&key=${apiKeyGoogleMaps}`);
       const reference = detailsPlace?.data?.result?.photos?.[0]?.photo_reference;
       /** get image url */
       const resultUrl = await this.getImgLink(reference);
@@ -60,7 +60,7 @@ class LocationGenerator extends OpenaiClient {
   async getImgLink(reference){
     let rezFin = {isResolved: true, url: ''};
     try{
-      const data = await axios.get(`https://maps.googleapis.com/maps/api/place/photo?maxwidth=3000&photoreference=`+  reference +`&key=` + apiKeyGoogleMaps)
+      const data = await axios.get(`https://maps.googleapis.com/maps/api/place/photo?maxwidth=3000&photoreference=${reference}&key=${apiKeyGoogleMaps}`)
       const url = data.request.res.responseUrl;
       rezFin = {isResolved:true, url};
     }catch(err){
@@ -75,7 +75,7 @@ class LocationGenerator extends OpenaiClient {
       // create the url based on the api specification
       const input = [place, description, 'like', aliasLocation, 'City:', city, 'Country:', country].join('%20');
       const requestFormat = input.replaceAll(' ', '%20');
-      const addressAndIdPlace = await axios.post('https://maps.googleapis.com/maps/api/place/findplacefromtext/json?fields=formatted_address%2Cplace_id&input=' + requestFormat + '&inputtype=textquery&key=' + apiKeyGoogleMaps);
+      const addressAndIdPlace = await axios.post(`https://maps.googleapis.com/maps/api/place/findplacefromtext/json?fields=formatted_address%2Cplace_id&input=${requestFormat}&inputtype=textquery&key=${apiKeyGoogleMaps}`);
       // verify to exist the location and get the place id
       if(!addressAndIdPlace?.data?.candidates?.[0]){
         console.log(`Place: ${place} => value: addressAndIdPlace?.data?.candidates?.[0] from function locationDetailsFromGoogleApi is undefined`);
@@ -96,7 +96,7 @@ class LocationGenerator extends OpenaiClient {
       }
 
       /** get details based on place id */
-      const detailsPlace = await axios.post('https://maps.googleapis.com/maps/api/place/details/json?language=en%2Cfields=geometry%2Cname%2Copening_hours%2Cphotos%2Cwebsite%2Curl&place_id=' + place_id +'&key=' + apiKeyGoogleMaps);
+      const detailsPlace = await axios.post(`https://maps.googleapis.com/maps/api/place/details/json?language=en%2Cfields=geometry%2Cname%2Copening_hours%2Cphotos%2Cwebsite%2Curl&place_id=${place_id}&key=${apiKeyGoogleMaps}`);
 
       const {url, website, name} = detailsPlace?.data?.result;
       const urlLocation = url;
@@ -140,11 +140,12 @@ class LocationGenerator extends OpenaiClient {
 
   /** this function retrive visit packages for a specific location */
   async getVisitPackages({place, index, city, country}){
+    let systemPrompt, userPrompt, JsonSchema = '';
     try{
       // prompts and json schema
       const prompts = this.promptLoader.getPrompt('locationGenerator').getFunction('getVisitPackages');
-      const systemPrompt = prompts.systemPrompt.content;
-      const userPrompt = this.promptLoader.replace({
+      systemPrompt = prompts.systemPrompt.content;
+      userPrompt = this.promptLoader.replace({
         data: prompts.userPrompt.content,
         changes: {"${place}": place, "${city}": city, "${country}": country}
       });
@@ -154,13 +155,17 @@ class LocationGenerator extends OpenaiClient {
         average_visiting_hours: z.number(),
         selected: z.boolean().describe('allways false')
       })
-      const JsonSchema = z.object({
+      JsonSchema = z.object({
         response: z.object({
           average_hours_visiting_full_location: z.number(),
           packages: z.array(Packages).describe('Include this property only if you can find available packages for the location. If no packages are available, do not include this property')
         })
       });
+    }catch(err){
+      return this.promptLoader.handleErrorPrompt(err, 'COD_01_L');
+    }
 
+    try{
       /** Create the request to OpenAI and send the result based on the information received. */
       const resultTimeToLocationLlm =  await OpenaiClient.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
       if(!resultTimeToLocationLlm.isResolved){
@@ -175,23 +180,27 @@ class LocationGenerator extends OpenaiClient {
 
   /** Verify if the locations are within the proximity area */
   async verifyProximitylocations(locations, prompt){
-    try {
-      this.countVerifyLocations+=1;
-
-      // prompts and json schema
+    this.countVerifyLocations+=1;
+    // prompts and json schema
+    let systemPrompt, userPrompt, JsonSchema = '';
+    try{
       const prompts = this.promptLoader.getPrompt('locationGenerator').getFunction('verifyProximitylocations');
-      const systemPrompt = prompts.systemPrompt.content;
-      const userPrompt = this.promptLoader.replace({
+      systemPrompt = prompts.systemPrompt.content;
+      userPrompt = this.promptLoader.replace({
         data: prompts.userPrompt.content,
         changes: {"${prompt}": prompt, "${locations}": locations}
       });
-      const JsonSchema = z.object({
+      JsonSchema = z.object({
         response: z.object({
           isRespectingTheRules: z.boolean().describe('true / false'),
           reason: z.string().describe('This should contain a reason only if isRespectingTheRules is false; otherwise, it can be an empty string.')
         })
       })
+    }catch(err){
+      return this.promptLoader.handleErrorPrompt(err, 'COD_02_L');
+    }
 
+    try {
       /** Create the request to OpenAI and send the result based on the information received. */
       const resultVerifyLocations = await OpenaiClient.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
       if(!resultVerifyLocations.isResolved){
@@ -212,10 +221,11 @@ class LocationGenerator extends OpenaiClient {
       this.countVerifyLocations = 0;
       this.rejectionReasonForProximityVerification = '';
     }
-    try{
 
+    let systemPrompt, userPrompt, JsonSchema = '';
+    try{
       const prompts = this.promptLoader.getPrompt('locationGenerator').getFunction('generateLocations');
-      const userPrompt = this.promptLoader.replace({
+      userPrompt = this.promptLoader.replace({
         data: prompts.userPrompt.content,
         changes: {"${city}": city, "${country}": country}
       });
@@ -228,7 +238,7 @@ class LocationGenerator extends OpenaiClient {
       let numberOfPlacesPrompt = scaleVisit == '1'  ? '' :
       scaleVisit == '2' ? `Generate at least 6 locations to visit.` : scaleVisit == '3' ? `Generate at least 15 locations to visit.`  : '';
 
-      let systemPrompt = this.promptLoader.replace({
+      systemPrompt = this.promptLoader.replace({
         data: prompts.systemPrompt.content,
         changes: {
           "${numberOfPlacesPrompt}": numberOfPlacesPrompt,
@@ -254,12 +264,16 @@ class LocationGenerator extends OpenaiClient {
         alias: z.string().describe("The name in the country's languge"),
         description: z.string().describe('Only one word description e.g: road, mountain, lake, church, museum, restaurant, shop')
       })
-      const JsonSchema = z.object({
+      JsonSchema = z.object({
       	response: z.object({
       		unique_places: z.array(UniquePlacesSchema)
       	})
       });
+    }catch(err){
+      return this.promptLoader.handleErrorPrompt(err, 'COD_03_L');
+    }
 
+    try{
       /** create locations */
       const resultLocationsLlm = await OpenaiClient.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
       if(!resultLocationsLlm.isResolved){

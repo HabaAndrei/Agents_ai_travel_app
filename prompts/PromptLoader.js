@@ -37,5 +37,11 @@ class PromptLoader {
     return data;
   }
 
+  handleErrorPrompt(err, identifier){
+    const errMessage = err?.message ? err?.message : err;
+    console.error(`We caught an error while loading the prompt from: ${identifier}. Error: ${errMessage}`);
+    return {isResolved: false, err: errMessage};
+  }
+
 }
 module.exports = PromptLoader;

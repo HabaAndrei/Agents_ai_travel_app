@@ -5,15 +5,16 @@ class ActivityGenerator extends OpenaiClient {
 
   /** get specific parameter for location */
   async getParamsAboutLocation({city, country}){
-    try{
-      // prompts and json schema
+    // prompts and json schema
+    let systemPrompt, userPrompt, JsonSchema = '';
+    try {
       const prompts = this.promptLoader.getPrompt('activityGenerator').getFunction('getParamsAboutLocation');
-      const systemPrompt = prompts.systemPrompt.content;
-      const userPrompt = this.promptLoader.replace({
+      systemPrompt = prompts.systemPrompt.content;
+      userPrompt = this.promptLoader.replace({
         data: prompts.userPrompt.content,
         changes: {"${city}": city, "${country}": country}
       });
-      const JsonSchema = z.object({
+      JsonSchema = z.object({
         response: z.object({
           data: z.object({
             local_places_and_tourist_places: z.boolean(),
@@ -21,6 +22,11 @@ class ActivityGenerator extends OpenaiClient {
           })
         })
       })
+    }catch(err){
+      return this.promptLoader.handleErrorPrompt(err, 'COD_01_A');
+    }
+
+    try{
       // Create the request to OpenAI and send the result based on the information received.
       const resultParamsAboutLocationLlm = await OpenaiClient.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
       if(!resultParamsAboutLocationLlm.isResolved){
@@ -35,20 +41,25 @@ class ActivityGenerator extends OpenaiClient {
 
   /** this function create activities based on the location recived */
   async generateActivities({city, country}){
-    try{
-      // prompts and json schema
+    // prompts and json schema
+    let systemPrompt, userPrompt, JsonSchema = '';
+    try {
       const prompts = this.promptLoader.getPrompt('activityGenerator').getFunction('generateActivities');
-      const systemPrompt = prompts.systemPrompt.content;
-      const userPrompt = this.promptLoader.replace({
+      systemPrompt = prompts.systemPrompt.content;
+      userPrompt = this.promptLoader.replace({
         data: prompts.userPrompt.content,
         changes: {"${city}": city, "${country}": country}
       });
-      const JsonSchema = z.object({
+      JsonSchema = z.object({
         response: z.object({
           activities: z.array(z.string()).describe('Here should be the activities I can do in that location, e.g., [Sport, History, Wellness, etc.]')
         })
       });
+    }catch(err){
+      return this.promptLoader.handleErrorPrompt(err, 'COD_02_A');
+    }
 
+    try{
       // create request to open ai to recive activities
       const resultCreateActivitiesLlm = await OpenaiClient.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
       if(!resultCreateActivitiesLlm.isResolved){
