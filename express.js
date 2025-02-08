@@ -13,11 +13,13 @@ const validateFieldsAiGeneration = require('./middlewares/validateFieldsAiGenera
 app.use(cors());
 app.use(express.json());
 
+
+///////////////////////////////////
 // instances of classes
-const openaiClient = new OpenaiClient();
+
+// Instantiate the OpenAI class only once to load prompts into a variable a single time and to establish the database connection
+new OpenaiClient();
 const activityGeneratior = new ActivityGenerator();
-const locationGenerator = new LocationGenerator();
-const programGenerator = new ProgramGenerator();
 const chatResponseGenerator = new ChatResponseGenerator();
 
 
@@ -39,11 +41,15 @@ app.post('/ai-generation', validateFieldsAiGeneration, async (req, res)=>{
       break;
     }
     case ('generateLocations') : {
-      rezFinal = await locationGenerator.generateLocations({city, country, customActivity, selectedActivities, isLocalPlaces, scaleVisit, isCalledFirstTime: true});
+      rezFinal = await new LocationGenerator().generateLocations(
+        {city, country, customActivity, selectedActivities, isLocalPlaces, scaleVisit, isCalledFirstTime: true}
+      );
       break;
     }
     case ('generateProgram') : {
-      rezFinal = await programGenerator.generateProgram({startDate, endDate, city, country, locations, hotelAddress, isCalledFirstTime: true});
+      rezFinal = await new ProgramGenerator().generateProgram(
+        {startDate, endDate, city, country, locations, hotelAddress, isCalledFirstTime: true}
+      );
       break;
     }
     case ('generateChatResponse') : {

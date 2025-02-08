@@ -31,7 +31,7 @@ class ProgramGenerator extends OpenaiClient {
       })
 
       /** Create the request to OpenAI */
-      const resultDetailsPlacesLlm = await this.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
+      const resultDetailsPlacesLlm = await OpenaiClient.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
       if(!resultDetailsPlacesLlm.isResolved){
         return {isResolved: false};
       }
@@ -95,7 +95,7 @@ class ProgramGenerator extends OpenaiClient {
         })
       })
       /** Create the request to OpenAI and send the result based on the information received. */
-      const resultEfficiencyProgramLlm = await this.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
+      const resultEfficiencyProgramLlm = await OpenaiClient.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
       if(!resultEfficiencyProgramLlm.isResolved){
         return {isResolved: false};
       }
@@ -193,7 +193,7 @@ class ProgramGenerator extends OpenaiClient {
       });
 
       /** create the program */
-      const resultProgramLlm = await this.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
+      const resultProgramLlm = await OpenaiClient.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
       if(!resultProgramLlm.isResolved){
         return {isResolved: false, err: resultProgramLlm?.err};
       }
@@ -316,7 +316,7 @@ class ProgramGenerator extends OpenaiClient {
         })
       })
 
-      const resultCompletionProgramDayLlm = await this.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
+      const resultCompletionProgramDayLlm = await OpenaiClient.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
       if(!resultCompletionProgramDayLlm.isResolved){
         return {isResolved: false, err: resultCompletionProgramDayLlm?.err};
       }
@@ -358,7 +358,7 @@ class ProgramGenerator extends OpenaiClient {
           isRespectingTheRules: z.boolean().describe('true / false')
         })
       })
-      const resultVerifyProgramDayLlm = await this.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
+      const resultVerifyProgramDayLlm = await OpenaiClient.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
       if(!resultVerifyProgramDayLlm.isResolved){
         return {isResolved: false};
       }

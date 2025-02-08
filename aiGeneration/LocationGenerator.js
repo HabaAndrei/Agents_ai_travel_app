@@ -162,7 +162,7 @@ class LocationGenerator extends OpenaiClient {
       });
 
       /** Create the request to OpenAI and send the result based on the information received. */
-      const resultTimeToLocationLlm =  await this.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
+      const resultTimeToLocationLlm =  await OpenaiClient.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
       if(!resultTimeToLocationLlm.isResolved){
         return {isResolved: false, err: resultTimeToLocationLlm?.err};;
       }
@@ -193,7 +193,7 @@ class LocationGenerator extends OpenaiClient {
       })
 
       /** Create the request to OpenAI and send the result based on the information received. */
-      const resultVerifyLocations = await this.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
+      const resultVerifyLocations = await OpenaiClient.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
       if(!resultVerifyLocations.isResolved){
         return {isResolved: false};
       }
@@ -261,7 +261,7 @@ class LocationGenerator extends OpenaiClient {
       });
 
       /** create locations */
-      const resultLocationsLlm = await this.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
+      const resultLocationsLlm = await OpenaiClient.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
       if(!resultLocationsLlm.isResolved){
         return {isResolved: false, err: resultLocationsLlm?.err };
       }
