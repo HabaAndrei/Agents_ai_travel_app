@@ -22,8 +22,8 @@
       "replace": []
     },
     "userPrompt": {
-      "content": "The history of conversation: ${historyConv}.",
-      "replace": ["${historyConv}"]
+      "content": "The history of conversation: ${messagesConversation}.",
+      "replace": ["${messagesConversation}"]
     }
   },
   "generateChatResponse": {

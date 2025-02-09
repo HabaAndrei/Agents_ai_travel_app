@@ -4,7 +4,7 @@ const OpenaiClient = require('../providers/OpenaiClient');
 class ChatResponseGenerator extends OpenaiClient {
 
   /** function that accept or refuze the question */
-  async acceptOrRejectQuestion(historyConv){
+  async acceptOrRejectQuestion(messagesConversation){
     // prompts and json schema
     let systemPrompt, userPrompt, JsonSchema = '';
     try {
@@ -12,7 +12,7 @@ class ChatResponseGenerator extends OpenaiClient {
       systemPrompt = prompts.systemPrompt.content;
       userPrompt = this.promptLoader.replace({
         data: prompts.userPrompt.content,
-        changes: {"${historyConv}": historyConv}
+        changes: {"${messagesConversation}": messagesConversation}
       });
       JsonSchema = z.object({
         response: z.object({
@@ -39,7 +39,7 @@ class ChatResponseGenerator extends OpenaiClient {
   }
 
   /** the main function */
-  async generateChatResponse({historyConv, tripsData}){
+  async generateChatResponse({messagesConversation, tripsData}){
     // prompts and the app manual
     let systemPromptContent = '';
     try{
@@ -62,7 +62,7 @@ class ChatResponseGenerator extends OpenaiClient {
       ];
 
       /** create history of conversation */
-      historyConv.forEach((mes)=>{
+      messagesConversation.forEach((mes)=>{
         if(mes.type === 'user'){
           messages.push({"role": "user", "content": mes.mes});
         }else if(mes.type === 'ai'){
@@ -71,7 +71,7 @@ class ChatResponseGenerator extends OpenaiClient {
       });
 
       /** verify if the question is accepted by our acceptance creteria */
-      const rezAcceptRefuze = await this.acceptOrRejectQuestion(historyConv);
+      const rezAcceptRefuze = await this.acceptOrRejectQuestion(messagesConversation);
       if(!rezAcceptRefuze.isResolved || !rezAcceptRefuze.data){
         return  {isResolved: true, data: "Information not available."}
       }

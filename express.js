@@ -32,7 +32,7 @@ app.post('/ai-generation', validateFieldsAiGeneration, async (req, res)=>{
   let rezFinal = '';
 
   const {startDate, endDate, city, country, locations, customActivity, selectedActivities, hotelAddress,
-    isLocalPlaces, scaleVisit, historyConv, tripsData
+    isLocalPlaces, scaleVisit, messagesConversation, tripsData
   } = req.body;
 
   switch (method) {
@@ -53,7 +53,7 @@ app.post('/ai-generation', validateFieldsAiGeneration, async (req, res)=>{
       break;
     }
     case ('generateChatResponse') : {
-      rezFinal = await chatResponseGenerator.generateChatResponse({historyConv, tripsData});
+      rezFinal = await chatResponseGenerator.generateChatResponse({messagesConversation, tripsData});
       break;
     }
   }
