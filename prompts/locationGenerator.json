@@ -38,10 +38,10 @@
       },
       "replace": ["${numberOfPlacesPrompt}", "${categories}", "${requirememtPrompt}"],
       "contentRejectionReason": {
-        "notice": "This is the reason why the result wasn’t good last time: ${this.rejectionReasonForProximityVerification}.",
+        "notice": "This is the reason why the result wasn’t good last time: ${rejectionReasonForProximityVerification}.",
         "warning": "Don’t repeat the same mistakes."
       },
-      "replaceRejectionReason": ["${this.rejectionReasonForProximityVerification}"],
+      "replaceRejectionReason": ["${rejectionReasonForProximityVerification}"],
       "contentLocalPlaces": {
         "requirement": "The input should be a request for lesser-known locations.",
         "instruction": "Provide recommendations for places frequented by locals, rather than popular tourist spots.",

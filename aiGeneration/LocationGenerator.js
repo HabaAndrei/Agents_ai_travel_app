@@ -180,7 +180,6 @@ class LocationGenerator extends OpenaiClient {
 
   /** Verify if the locations are within the proximity area */
   async verifyProximitylocations(locations, prompt){
-    this.countVerifyLocations+=1;
     // prompts and json schema
     let systemPrompt, userPrompt, JsonSchema = '';
     try{
@@ -207,18 +206,60 @@ class LocationGenerator extends OpenaiClient {
         return {isResolved: false};
       }
       let result = resultVerifyLocations.data;
-      this.rejectionReasonForProximityVerification += result.reason;
-      console.log(this.rejectionReasonForProximityVerification, ' <<<<< ========  this.rejectionReasonForProximityVerification');
-      return {isResolved: true, data: result?.isRespectingTheRules};
+      return {isResolved: true, data: result?.isRespectingTheRules, reason: result?.reason ? result?.reason : ''};
     }catch(err){
       return {isResolved: false};
     }
   }
 
+  /**
+   * This function generates a location and simultaneously verifies if the response meets the expected criteria.
+   * If the response does not meet the expectations, the function is called again, with a maximum of 3 retries.
+   */
+  async retryGenerateLocation({systemPrompt, userPrompt, JsonSchema}) {
+    const prompts = this.promptLoader.getPrompt('locationGenerator').getFunction('generateLocations');
+    let count = 0;
+    let isRespectingTheRules = false;
+    let rejectionReasonForProximityVerification = '';
+    let resultLocations = '';
+
+    while ((count < 4) && !isRespectingTheRules) {
+      console.log('Function called with count =>>> ', count);
+      console.log(rejectionReasonForProximityVerification, ' <<<<< ========  Rejection reason ');
+
+      if (rejectionReasonForProximityVerification.length) {
+        // Add a specific prompt for rejection
+        systemPrompt += this.promptLoader.replace({
+          data: prompts.systemPrompt.contentRejectionReason,
+          changes: { "${rejectionReasonForProximityVerification}": rejectionReasonForProximityVerification }
+        });
+      }
+
+      // Generate locations
+      const resultLocationsLlm = await OpenaiClient.retryLlmCallWithSchema({ systemPrompt, userPrompt, JsonSchema });
+
+      if (!resultLocationsLlm.isResolved) {
+        return { isResolved: false, err: resultLocationsLlm?.err };
+      }
+
+      resultLocations = resultLocationsLlm.data;
+
+      /** Verify the proximity of generated locations */
+      const resultVerification = await this.verifyProximitylocations(resultLocations, userPrompt);
+
+      // If the locations meet the rules, exit the loop by setting 'isRespectingTheRules' to true
+      if (resultVerification?.isResolved && resultVerification?.data) isRespectingTheRules = true;
+
+      rejectionReasonForProximityVerification += resultVerification?.reason;
+      count += 1;
+    }
+
+    return resultLocations;
+  }
+
   /** get locations to visit in a city */
   async generateLocations({city, country, customActivity, selectedActivities, isLocalPlaces, scaleVisit, isCalledFirstTime}){
     if( isCalledFirstTime ) {
-      this.countVerifyLocations = 0;
       this.rejectionReasonForProximityVerification = '';
     }
 
@@ -251,13 +292,6 @@ class LocationGenerator extends OpenaiClient {
         systemPrompt += JSON.stringify(prompts.systemPrompt.contentLocalPlaces)
       }
 
-      /** If the function was rejected, use that argument to create the best prompt. */
-      if (this.rejectionReasonForProximityVerification.length) {
-        systemPrompt += this.promptLoader.replace({
-          data: prompts.systemPrompt.contentRejectionReason,
-          changes: {"${this.rejectionReasonForProximityVerification}": this.rejectionReasonForProximityVerification}
-        });
-      }
       /** json schema */
       const UniquePlacesSchema = z.object({
       	name: z.string().describe(`The name in english. The name should be relevant. For example, if you are in Brașov, Romania, and choose Poiana Brașov, don't just say 'Poiana'; say 'Poiana Brașov,' the full name.`),
@@ -274,21 +308,8 @@ class LocationGenerator extends OpenaiClient {
     }
 
     try{
-      /** create locations */
-      const resultLocationsLlm = await OpenaiClient.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
-      if(!resultLocationsLlm.isResolved){
-        return {isResolved: false, err: resultLocationsLlm?.err };
-      }
-      let resultLocations = resultLocationsLlm.data;
-
-      /** verify proximity of locations */
-      const resultVerification = await this.verifyProximitylocations(resultLocations, userPrompt);
-
-      /** Execute a maximum of 3 times if the LLM does not provide a location to be included in the acceptance criteria */
-      if(resultVerification?.isResolved && !resultVerification?.data && this.countVerifyLocations < 3){
-        console.log('is executing again: ', this.countVerifyLocations);
-        return this.generateLocations({city, country, customActivity, selectedActivities, isLocalPlaces, scaleVisit, isCalledFirstTime: false});
-      }
+      // create locations
+      const resultLocations = await this.retryGnerateLocation({systemPrompt, userPrompt, JsonSchema});
       const {unique_places} = resultLocations;
 
       /** filter only unique places based on 'name' and 'alias' */
