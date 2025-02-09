@@ -83,7 +83,6 @@ class ProgramGenerator extends OpenaiClient {
   /** this function verifies if the program is efficient */
   async verifyEfficiencyProgram(program){
     if (typeof program != 'string') program = JSON.stringify(program);
-    this.countVerificationEfficiencyProgram += 1;
 
     // prompts and json schema
     let systemPrompt, userPrompt, JsonSchema = '';
@@ -113,21 +112,66 @@ class ProgramGenerator extends OpenaiClient {
       }
       let result = resultEfficiencyProgramLlm.data;
       /** Store the reason to create the best prompt for the next call if the result is falsy. */
-      this.rejectionReasonForEfficiencyVerification += result.reason;
-      console.log(this.rejectionReasonForEfficiencyVerification, '   rejectionReasonForEfficiencyVerification');
-      return {isResolved: true, data: result.isRespectingTheRules};
+      console.log(result?.reason, '   rejectionReasonForEfficiencyVerification');
+      return {isResolved: true, data: result.isRespectingTheRules, reason: result?.reason ? result?.reason : ''};
     }catch(err){
       return {isResolved: false};
     }
   }
 
-  /** create program function */
-  async generateProgram({startDate, endDate, city, country, locations, hotelAddress, isCalledFirstTime}){
+  async retryGenerateProgram({systemPrompt, userPrompt, JsonSchema, nameIndexLocationsAr}){
+    let count = 0;
+    let isRespectingTheRules = false;
+    let isAllLocations = false
+    let resultProgram = '';
+    let rejectionReasonForEfficiencyVerification = '';
 
-    if ( isCalledFirstTime ) {
-      this.countVerificationEfficiencyProgram = 0;
-      this.rejectionReasonForEfficiencyVerification = '';
+    while ((count < 4) && (!isRespectingTheRules || !isAllLocations )) {
+
+      // add in sysystem prompt the rejection reason
+      if(rejectionReasonForEfficiencyVerification.length){
+        systemPrompt += this.promptLoader.replace({
+          data: prompts.systemPrompt.contentRejectionReason,
+          changes: {"${rejectionReasonForEfficiencyVerification}": rejectionReasonForEfficiencyVerification}
+        });
+      }
+
+      // create the program
+      const resultProgramLlm = await OpenaiClient.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
+      if(!resultProgramLlm.isResolved){
+        return {isResolved: false, err: resultProgramLlm?.err};
+      }
+      let contentProgram = resultProgramLlm.data;
+      resultProgram = contentProgram.program;
+
+      /** verify if exist all locations in program */
+      const verificationExistenceOfLocationsFromProgram = this.verifyExistenceOfLocationsFromProgram({location: nameIndexLocationsAr, program: resultProgram});
+      const {isResolved, existAllLocations} = verificationExistenceOfLocationsFromProgram
+      if(isResolved && !existAllLocations){
+        console.log('doesnt exist all locations and we are call the function again');
+        isAllLocations = false;
+      }else{
+        isAllLocations = true;
+      }
+
+      /** verify efficiency of program */
+      const verificationEfficiencyProgram = await this.verifyEfficiencyProgram(resultProgram)
+      console.log(verificationEfficiencyProgram.data, ' <<<== isRespectingTheRulesEfficiencyProgram')
+      // If the program's efficiency is not good, call the function again, but no more than twice.
+      if(verificationEfficiencyProgram?.isResolved && !verificationEfficiencyProgram?.data){
+        isRespectingTheRules = false;
+        rejectionReasonForEfficiencyVerification += verificationEfficiencyProgram.reason;
+      }else{
+        isRespectingTheRules = true;
+      }
+      count += 1;
     }
+
+    return resultProgram;
+  }
+
+  /** create program function */
+  async generateProgram({startDate, endDate, city, country, locations, hotelAddress}){
 
     // array of locations with name, address and dataTimeLocation
     const nameIndexAddressLocationsAr = locations.map((ob, index)=>{
@@ -164,7 +208,6 @@ class ProgramGenerator extends OpenaiClient {
     }
     const nameIndexAddressLocationsArString = JSON.stringify(nameIndexAddressLocationsAr);
 
-
     let systemPrompt, userPrompt, JsonSchema = '';
     try{
       /** prompts and json schem to create the program */
@@ -180,14 +223,6 @@ class ProgramGenerator extends OpenaiClient {
           "${country}": country
         }
       });
-
-      ///////////////////////////////////
-      if(this.rejectionReasonForEfficiencyVerification.length){
-        systemPrompt += this.promptLoader.replace({
-          data: prompts.systemPrompt.contentRejectionReason,
-          changes: {"${this.rejectionReasonForEfficiencyVerification}": this.rejectionReasonForEfficiencyVerification}
-        });
-      }
 
       if ( hotelAddress ) {
         userPrompt += this.promptLoader.replace({
@@ -217,29 +252,7 @@ class ProgramGenerator extends OpenaiClient {
 
     try{
       /** create the program */
-      const resultProgramLlm = await OpenaiClient.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
-      if(!resultProgramLlm.isResolved){
-        return {isResolved: false, err: resultProgramLlm?.err};
-      }
-      let contentProgram = resultProgramLlm.data;
-      const {program} = contentProgram;
-
-      /** verify if exist all locations in program */
-      const verificationExistenceOfLocationsFromProgram = this.verifyExistenceOfLocationsFromProgram({location: nameIndexLocationsAr, program});
-      const {isResolved, existAllLocations} = verificationExistenceOfLocationsFromProgram
-      if(isResolved && !existAllLocations){
-        console.log('doesnt exist all locations and we are call the function again');
-        return this.generateProgram({startDate, endDate, city, country, locations, hotelAddress, isCalledFirstTime: false});
-      }
-
-      /** verify efficiency of program */
-      const verificationEfficiencyProgram = await this.verifyEfficiencyProgram(program)
-      console.log(verificationEfficiencyProgram.data, ' isRespectingTheRulesEfficiencyProgram')
-      // If the program's efficiency is not good, call the function again, but no more than twice.
-      if(verificationEfficiencyProgram?.isResolved && !verificationEfficiencyProgram?.data && this.countVerificationEfficiencyProgram < 3){
-        console.log('is executing again: ', this.countVerificationEfficiencyProgram);
-        return this.generateProgram({startDate, endDate, city, country, locations, hotelAddress, isCalledFirstTime: false});
-      }
+      const program = await this.retryGenerateProgram({systemPrompt, userPrompt, JsonSchema, nameIndexLocationsAr});
 
       /** add the schedule/operating hours of the locations */
       for(let dayProgram of program){

@@ -43,10 +43,10 @@
       },
       "replace": [],
       "contentRejectionReason": {
-        "notice": "This is the reason why the result wasn’t good last time: ${this.rejectionReasonForEfficiencyVerification}.",
+        "notice": "This is the reason why the result wasn’t good last time: ${rejectionReasonForEfficiencyVerification}.",
         "warning": "Don’t repeat the same mistakes."
       },
-      "replaceRejectionReason": ["${this.rejectionReasonForEfficiencyVerification}"]
+      "replaceRejectionReason": ["${rejectionReasonForEfficiencyVerification}"]
 
     },
     "userPrompt": {

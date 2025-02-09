@@ -21,7 +21,7 @@ app.use(express.json());
 new OpenaiClient();
 const activityGeneratior = new ActivityGenerator();
 const chatResponseGenerator = new ChatResponseGenerator();
-
+const locationGenerator = new LocationGenerator();
 
 ///////////////////////////////////
 // RCP api
@@ -41,14 +41,14 @@ app.post('/ai-generation', validateFieldsAiGeneration, async (req, res)=>{
       break;
     }
     case ('generateLocations') : {
-      rezFinal = await new LocationGenerator().generateLocations(
-        {city, country, customActivity, selectedActivities, isLocalPlaces, scaleVisit, isCalledFirstTime: true}
+      rezFinal = await locationGenerator.generateLocations(
+        {city, country, customActivity, selectedActivities, isLocalPlaces, scaleVisit}
       );
       break;
     }
     case ('generateProgram') : {
       rezFinal = await new ProgramGenerator().generateProgram(
-        {startDate, endDate, city, country, locations, hotelAddress, isCalledFirstTime: true}
+        {startDate, endDate, city, country, locations, hotelAddress}
       );
       break;
     }

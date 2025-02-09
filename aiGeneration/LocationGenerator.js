@@ -258,11 +258,7 @@ class LocationGenerator extends OpenaiClient {
   }
 
   /** get locations to visit in a city */
-  async generateLocations({city, country, customActivity, selectedActivities, isLocalPlaces, scaleVisit, isCalledFirstTime}){
-    if( isCalledFirstTime ) {
-      this.rejectionReasonForProximityVerification = '';
-    }
-
+  async generateLocations({city, country, customActivity, selectedActivities, isLocalPlaces, scaleVisit}){
     let systemPrompt, userPrompt, JsonSchema = '';
     try{
       const prompts = this.promptLoader.getPrompt('locationGenerator').getFunction('generateLocations');
@@ -309,7 +305,7 @@ class LocationGenerator extends OpenaiClient {
 
     try{
       // create locations
-      const resultLocations = await this.retryGnerateLocation({systemPrompt, userPrompt, JsonSchema});
+      const resultLocations = await this.retryGenerateLocation({systemPrompt, userPrompt, JsonSchema});
       const {unique_places} = resultLocations;
 
       /** filter only unique places based on 'name' and 'alias' */
