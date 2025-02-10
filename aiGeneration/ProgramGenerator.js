@@ -127,8 +127,9 @@ class ProgramGenerator extends OpenaiClient {
     let rejectionReasonForEfficiencyVerification = '';
 
     while ((count < 4) && (!isRespectingTheRules || !isAllLocations )) {
+      count += 1;
 
-      // add in sysystem prompt the rejection reason
+      // add in system prompt the rejection reason
       if(rejectionReasonForEfficiencyVerification.length){
         systemPrompt += this.promptLoader.replace({
           data: prompts.systemPrompt.contentRejectionReason,
@@ -150,6 +151,7 @@ class ProgramGenerator extends OpenaiClient {
       if(isResolved && !existAllLocations){
         console.log('doesnt exist all locations and we are call the function again');
         isAllLocations = false;
+        continue;
       }else{
         isAllLocations = true;
       }
@@ -164,7 +166,6 @@ class ProgramGenerator extends OpenaiClient {
       }else{
         isRespectingTheRules = true;
       }
-      count += 1;
     }
 
     return resultProgram;
@@ -313,6 +314,30 @@ class ProgramGenerator extends OpenaiClient {
     }
   }
 
+  async retryGenerateProgramDay({systemPrompt, userPrompt, JsonSchema, activities}){
+    let count = 0;
+    let isRespectingTheRules = false;
+    let program = '';
+
+    while ((count < 4) && !isRespectingTheRules) {
+      count += 1;
+      const resultCompletionProgramDayLlm = await OpenaiClient.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
+      program = resultCompletionProgramDayLlm?.data?.program;
+      // if the generated program does not have all activities, it will execute again the funtion
+      if(program.length != activities.length){
+        continue;
+      }
+
+      /** verify efficiency of program */
+      const resultVerifyProgramDay = await this.verifyEfficiencyProgramDay(program);
+      const isRespectingTheRulesEfficiencyProgramDay = resultVerifyProgramDay.data.isRespectingTheRules;
+
+      // If the result respect the rules
+      if (resultVerifyProgramDay?.isResolved && isRespectingTheRulesEfficiencyProgramDay) isRespectingTheRules = true;
+    }
+    return program;
+  }
+
   /** order location for each day */
   async generateProgramDay({date, activities, day, city, country, hotelAddress}){
     // prompts and json schema
@@ -358,25 +383,7 @@ class ProgramGenerator extends OpenaiClient {
     }
 
     try{
-      const resultCompletionProgramDayLlm = await OpenaiClient.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
-      if(!resultCompletionProgramDayLlm.isResolved){
-        return {isResolved: false, err: resultCompletionProgramDayLlm?.err};
-      }
-      let program = resultCompletionProgramDayLlm?.data?.program;
-
-      // if the generated program does not have all activities, it will execute again the funtion
-      if(program.length != activities.length){
-        return this.generateProgramDay({date, activities, day, city, country, hotelAddress})
-      }
-
-      /** verify efficiency of program */
-      const resultVerifyProgramDay = await this.verifyEfficiencyProgramDay(program);
-      const isRespectingTheRulesEfficiencyProgramDay = resultVerifyProgramDay.data.isRespectingTheRules;
-      /** If the result doesn't respect the rules, call the function again. */
-      if(resultVerifyProgramDay?.isResolved && !isRespectingTheRulesEfficiencyProgramDay){
-        return this.generateProgramDay({date, activities, day, city, country, hotelAddress});
-      }
-
+      const program = await this.retryGenerateProgramDay({systemPrompt, userPrompt, JsonSchema, activities});
       return {isResolved: true, data: {activities: program, day}}
     }catch(err){
       console.log('err at completionProgramDay', err)
