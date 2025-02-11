@@ -7,7 +7,7 @@ const LocationGenerator = require('./aiGeneration/LocationGenerator.js');
 const ProgramGenerator = require('./aiGeneration/ProgramGenerator.js');
 const ChatResponseGenerator = require('./aiGeneration/ChatResponseGenerator.js');
 const Mailer = require('./mailer/Mailer.js')
-const { searchDestination } = require('./diverse/searchDestination.js')
+const DestinationSearch = require('./diverse/DestinationSearch.js')
 const EmailContentProvider = require('./mailer/EmailContentProvider.js');
 const validateFieldsAiGeneration = require('./middlewares/validateFieldsAiGeneration');
 app.use(cors());
@@ -62,7 +62,7 @@ app.post('/ai-generation', validateFieldsAiGeneration, async (req, res)=>{
 
 app.get('/search-destination', async (req, res) => {
   const {input, country, value} = req.query;
-  rezFinal = searchDestination(input, country, value);
+  rezFinal = DestinationSearch.getInstance().searchDestination(input, country, value);
   res.send(rezFinal);
 });
 

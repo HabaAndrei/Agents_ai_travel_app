@@ -4,7 +4,7 @@ const {initializeApp} = require("firebase/app");
 const {getFirestore} = require("firebase/firestore");
 
 
-
+// Singleton
 class Firebase {
 
   static firebaseConfig = {
@@ -18,8 +18,16 @@ class Firebase {
   };
 
   constructor(){
-    const app_firebase = initializeApp(Firebase.firebaseConfig);
-    this.db = getFirestore(app_firebase);
+
+    if (!Firebase.instace){
+      Firebase.instace = this;
+      const app_firebase = initializeApp(Firebase.firebaseConfig);
+      this.db = getFirestore(app_firebase);
+      console.log(typeof(this.db), ' << == ');
+    }
+
+    return Firebase.instace;
+
   }
 
 }
