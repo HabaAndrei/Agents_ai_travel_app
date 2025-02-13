@@ -3,6 +3,10 @@ const OpenaiClient = require('../providers/OpenaiClient');
 
 class ChatResponseGenerator extends OpenaiClient {
 
+  constructor(){
+    super();
+  }
+
   /** function that accept or refuze the question */
   async acceptOrRejectQuestion(messagesConversation){
     // prompts and json schema
@@ -25,7 +29,7 @@ class ChatResponseGenerator extends OpenaiClient {
 
     try{
       // Create the request to OpenAI and send the result based on the information received.
-      const resultAcceptOrRejectQuestionLlm = await OpenaiClient.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
+      const resultAcceptOrRejectQuestionLlm = await this.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
       if(!resultAcceptOrRejectQuestionLlm.isResolved){
         return {isResolved: false, err: resultAcceptOrRejectQuestionLlm?.err};
       }
@@ -77,7 +81,7 @@ class ChatResponseGenerator extends OpenaiClient {
       }
 
       // get response from chat and send it
-      const rez = await OpenaiClient.llmCallChat(messages);
+      const rez = await this.llmCallChat(messages);
       if(!rez.isResolved) return {isResolved: true, data: "Information not available."}
       return {isResolved: true, data: rez.data}
     }catch(err){

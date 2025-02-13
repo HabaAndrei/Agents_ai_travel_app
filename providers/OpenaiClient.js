@@ -10,21 +10,20 @@ const PromptLoader = require('../prompts/PromptLoader.js');
 const loader = new ConfigLoader();
 
 /** base class for particular instances of LLM clients */
-class OpenaiClient extends Firebase {
+class OpenaiClient {
 
   constructor(){
-    super();
     this.promptLoader = new PromptLoader();
   }
 
-  static async retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema}){
+  async retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema}){
     if( typeof(systemPrompt) != 'string' ) systemPrompt = JSON.stringify(systemPrompt);
     if( typeof(userPrompt) != 'string' ) userPrompt = JSON.stringify(userPrompt);
     let failedLLMCalls = 0;
     let result;
     while(failedLLMCalls < 3){
       if (failedLLMCalls > 1) console.log('retrying LLM call ... #', {failedLLMCalls});
-      const data = await OpenaiClient.llmCompletionWithSchema({systemPrompt, userPrompt, JsonSchema});
+      const data = await this.llmCompletionWithSchema({systemPrompt, userPrompt, JsonSchema});
       result = data;
       if (data.isResolved) return data;
       failedLLMCalls += 1;
@@ -33,7 +32,7 @@ class OpenaiClient extends Firebase {
   }
 
   /** universal function to call open ai with zod response only */
-  static async llmCompletionWithSchema({systemPrompt, userPrompt, JsonSchema}){
+  async llmCompletionWithSchema({systemPrompt, userPrompt, JsonSchema}){
     try {
       const completion = await openai_client.chat.completions.create({
         messages: [
@@ -59,7 +58,7 @@ class OpenaiClient extends Firebase {
     }
   }
 
-  static async llmCallChat(messages){
+  async llmCallChat(messages){
     try {
       const completion = await openai_client.chat.completions.create({
         messages: messages,

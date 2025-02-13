@@ -1,7 +1,6 @@
 const express = require('express');
 const app = express();
 const cors = require('cors')
-const OpenaiClient = require('./providers/OpenaiClient.js');
 const ActivityGenerator = require('./aiGeneration/ActivityGenerator.js');
 const LocationGenerator = require('./aiGeneration/LocationGenerator.js');
 const ProgramGenerator = require('./aiGeneration/ProgramGenerator.js');
@@ -17,11 +16,10 @@ app.use(express.json());
 ///////////////////////////////////
 // instances of classes
 
-// Instantiate the OpenAI class only once to load prompts into a variable a single time and to establish the database connection
-new OpenaiClient();
-const activityGeneratior = new ActivityGenerator();
-const chatResponseGenerator = new ChatResponseGenerator();
+const activityGenerator = new ActivityGenerator();
 const locationGenerator = new LocationGenerator();
+const programGenerator = new ProgramGenerator();
+const chatResponseGenerator = new ChatResponseGenerator();
 
 ///////////////////////////////////
 // RCP api
@@ -37,7 +35,7 @@ app.post('/ai-generation', validateFieldsAiGeneration, async (req, res)=>{
 
   switch (method) {
     case ('generateActivities') : {
-      rezFinal = await activityGeneratior.generateActivities({city, country});
+      rezFinal = await activityGenerator.generateActivities({city, country});
       break;
     }
     case ('generateLocations') : {
@@ -47,7 +45,7 @@ app.post('/ai-generation', validateFieldsAiGeneration, async (req, res)=>{
       break;
     }
     case ('generateProgram') : {
-      rezFinal = await new ProgramGenerator().generateProgram(
+      rezFinal = await programGenerator.generateProgram(
         {startDate, endDate, city, country, locations, hotelAddress}
       );
       break;

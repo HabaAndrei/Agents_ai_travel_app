@@ -3,6 +3,10 @@ const OpenaiClient = require('../providers/OpenaiClient');
 
 class ActivityGenerator extends OpenaiClient {
 
+  constructor(){
+    super();
+  }
+
   /** get specific parameter for location */
   async getParamsAboutLocation({city, country}){
     // prompts and json schema
@@ -28,7 +32,7 @@ class ActivityGenerator extends OpenaiClient {
 
     try{
       // Create the request to OpenAI and send the result based on the information received.
-      const resultParamsAboutLocationLlm = await OpenaiClient.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
+      const resultParamsAboutLocationLlm = await this.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
       if(!resultParamsAboutLocationLlm.isResolved){
         return {isResolved: false, err: resultParamsAboutLocationLlm?.err};
       }
@@ -61,7 +65,7 @@ class ActivityGenerator extends OpenaiClient {
 
     try{
       // create request to open ai to recive activities
-      const resultCreateActivitiesLlm = await OpenaiClient.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
+      const resultCreateActivitiesLlm = await this.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
       if(!resultCreateActivitiesLlm.isResolved){
         return {isResolved: false, err: resultCreateActivitiesLlm?.err};
       }
@@ -77,4 +81,4 @@ class ActivityGenerator extends OpenaiClient {
   }
 }
 
-module.exports =  ActivityGenerator
+module.exports = ActivityGenerator

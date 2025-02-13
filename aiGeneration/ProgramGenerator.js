@@ -1,8 +1,14 @@
 const OpenaiClient = require('../providers/OpenaiClient');
 const z = require("zod");
 const {setDoc, getDoc, doc} = require("firebase/firestore");
+const Firebase = require('../providers/Firebase.js');
 
 class ProgramGenerator extends OpenaiClient {
+
+  constructor(){
+    super()
+    this.db = new Firebase().db;
+  }
 
   /** get details for a specific location */
   async getDetailsPlace({name, id, place_id, city, country}){
@@ -36,7 +42,7 @@ class ProgramGenerator extends OpenaiClient {
 
     try{
       /** Create the request to OpenAI */
-      const resultDetailsPlacesLlm = await OpenaiClient.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
+      const resultDetailsPlacesLlm = await this.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
       if(!resultDetailsPlacesLlm.isResolved){
         return {isResolved: false};
       }
@@ -106,7 +112,7 @@ class ProgramGenerator extends OpenaiClient {
 
     try {
       /** Create the request to OpenAI and send the result based on the information received. */
-      const resultEfficiencyProgramLlm = await OpenaiClient.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
+      const resultEfficiencyProgramLlm = await this.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
       if(!resultEfficiencyProgramLlm.isResolved){
         return {isResolved: false};
       }
@@ -138,7 +144,7 @@ class ProgramGenerator extends OpenaiClient {
       }
 
       // create the program
-      const resultProgramLlm = await OpenaiClient.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
+      const resultProgramLlm = await this.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
       if(!resultProgramLlm.isResolved){
         return {isResolved: false, err: resultProgramLlm?.err};
       }
@@ -321,7 +327,7 @@ class ProgramGenerator extends OpenaiClient {
 
     while ((count < 4) && !isRespectingTheRules) {
       count += 1;
-      const resultCompletionProgramDayLlm = await OpenaiClient.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
+      const resultCompletionProgramDayLlm = await this.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
       program = resultCompletionProgramDayLlm?.data?.program;
       // if the generated program does not have all activities, it will execute again the funtion
       if(program.length != activities.length){
@@ -413,7 +419,7 @@ class ProgramGenerator extends OpenaiClient {
     }
 
     try{
-      const resultVerifyProgramDayLlm = await OpenaiClient.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
+      const resultVerifyProgramDayLlm = await this.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
       if(!resultVerifyProgramDayLlm.isResolved){
         return {isResolved: false};
       }

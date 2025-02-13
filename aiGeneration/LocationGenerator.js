@@ -5,8 +5,14 @@ const axios = require('axios');
 const {setDoc, getDoc, doc} = require("firebase/firestore");
 const z = require("zod");
 const OpenaiClient = require('../providers/OpenaiClient');
+const Firebase = require('../providers/Firebase.js');
 
 class LocationGenerator extends OpenaiClient {
+
+  constructor(){
+    super()
+    this.db = new Firebase().db;
+  }
 
   /** get image of the city */
   async getUrlImageCity({city,  country}){
@@ -167,7 +173,7 @@ class LocationGenerator extends OpenaiClient {
 
     try{
       /** Create the request to OpenAI and send the result based on the information received. */
-      const resultTimeToLocationLlm =  await OpenaiClient.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
+      const resultTimeToLocationLlm =  await this.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
       if(!resultTimeToLocationLlm.isResolved){
         return {isResolved: false, err: resultTimeToLocationLlm?.err};;
       }
@@ -201,7 +207,7 @@ class LocationGenerator extends OpenaiClient {
 
     try {
       /** Create the request to OpenAI and send the result based on the information received. */
-      const resultVerifyLocations = await OpenaiClient.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
+      const resultVerifyLocations = await this.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
       if(!resultVerifyLocations.isResolved){
         return {isResolved: false};
       }
@@ -236,7 +242,7 @@ class LocationGenerator extends OpenaiClient {
       }
 
       // Generate locations
-      const resultLocationsLlm = await OpenaiClient.retryLlmCallWithSchema({ systemPrompt, userPrompt, JsonSchema });
+      const resultLocationsLlm = await this.retryLlmCallWithSchema({ systemPrompt, userPrompt, JsonSchema });
 
       if (!resultLocationsLlm.isResolved) {
         return { isResolved: false, err: resultLocationsLlm?.err };
