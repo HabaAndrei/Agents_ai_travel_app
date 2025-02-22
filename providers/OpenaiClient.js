@@ -1,11 +1,10 @@
-require('dotenv').config();
 const  OpenAI = require('openai');
-const {API_KEY_OPENAI} = process.env;
-const openai_client = new OpenAI({ apiKey: API_KEY_OPENAI });
 const { zodResponseFormat } = require("openai/helpers/zod");
 const ConfigLoader = require('../model/ConfigLoader.js');
-const Firebase = require('./Firebase.js');
 const PromptLoader = require('../prompts/PromptLoader.js');
+const EnvConfig = require('./EnvConfig.js');
+
+const openai_client = new OpenAI({ apiKey: EnvConfig.getInstance().get('API_KEY_OPENAI') });
 
 const loader = new ConfigLoader();
 

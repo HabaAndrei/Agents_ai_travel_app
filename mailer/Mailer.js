@@ -1,6 +1,7 @@
-require('dotenv').config();
-const {EMAIL_PASSWORD, EMAIL_ACCOUNT} = process.env;
 const nodemailer = require("nodemailer");
+const EnvConfig = require('../providers/EnvConfig.js');
+
+const envVariable = EnvConfig.getInstance();
 
 class Mailer {
 
@@ -11,8 +12,8 @@ class Mailer {
       secure: false,
       requireTLS: true,
       auth: {
-        user: EMAIL_ACCOUNT,
-        pass: EMAIL_PASSWORD,
+        user: envVariable.get('EMAIL_ACCOUNT'),
+        pass: envVariable.get('EMAIL_PASSWORD'),
       },
     });
   }
@@ -20,7 +21,7 @@ class Mailer {
   async sendEmail({emailTo, subject, htmlContent}){
     try {
       const mailOptions = {
-        from: EMAIL_ACCOUNT,
+        from: envVariable.get('EMAIL_ACCOUNT'),
         to: emailTo,
         subject: subject,
         html: htmlContent,

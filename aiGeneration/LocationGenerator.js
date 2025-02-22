@@ -1,11 +1,11 @@
-require('dotenv').config();
-const { API_KEY_GOOGLE_MAP} = process.env;
-const apiKeyGoogleMaps = API_KEY_GOOGLE_MAP;
 const axios = require('axios');
 const {setDoc, getDoc, doc} = require("firebase/firestore");
 const z = require("zod");
 const OpenaiClient = require('../providers/OpenaiClient');
 const Firebase = require('../providers/Firebase.js');
+const EnvConfig = require('../providers/EnvConfig.js');
+
+const apiKeyGoogleMaps = EnvConfig.getInstance().get('API_KEY_GOOGLE_MAP');
 
 class LocationGenerator extends OpenaiClient {
 
