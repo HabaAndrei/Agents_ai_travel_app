@@ -22,18 +22,15 @@ const programGenerator = new ProgramGenerator();
 const chatResponseGenerator = new ChatResponseGenerator();
 
 ///////////////////////////////////
-// RCP api
 
 app.post('/ai-generation', validateFieldsAiGeneration, async (req, res)=>{
-
-  const {method} = req.query;
   let rezFinal = '';
 
-  const {startDate, endDate, city, country, locations, customActivity, selectedActivities, hotelAddress,
+  const {generationType, startDate, endDate, city, country, locations, customActivity, selectedActivities, hotelAddress,
     isLocalPlaces, scaleVisit, messagesConversation, tripsData
   } = req.body;
 
-  switch (method) {
+  switch (generationType) {
     case ('generateActivities') : {
       rezFinal = await activityGenerator.generateActivities({city, country});
       break;
