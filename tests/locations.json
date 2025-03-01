@@ -1,0 +1,147 @@
+[
+    {
+      "name": "Rasnov Fortress",
+      "address": "Cetatea Râșnov, Râșnov 505400, România",
+      "place_id": "ChIJT6hpdk1Fs0ARkzuI5gqLByo",
+      "urlLocation": "https://maps.google.com/?cid=3028542153363569555",
+      "geometry_location": {
+        "lng": 25.4693556,
+        "lat": 45.5904748
+      },
+      "website": "",
+      "arrayProgramPlace": [
+        "Monday: 9:00 AM – 7:00 PM",
+        "Tuesday: 9:00 AM – 7:00 PM",
+        "Wednesday: 9:00 AM – 7:00 PM",
+        "Thursday: 9:00 AM – 7:00 PM",
+        "Friday: 9:00 AM – 7:00 PM",
+        "Saturday: 9:00 AM – 7:00 PM",
+        "Sunday: 9:00 AM – 7:00 PM"
+      ],
+      "arrayWithLinkImages": [
+        "https://lh3.googleusercontent.com/place-photos/ADOriq1rZVqM6Xp-kbT_cnn817A_4JB11cGH4lbShzu6TYsQ23BLsspZ6-wTmVfjOAYhsNqERWiB73al1DkdpAJLpy0ktC00cBM6tm57trOp_uo59d73SzGsGzDo36IvsvPBgV49KJUp=s1600-w3000"
+      ],
+      "index": 1,
+      "dataTimeLocation": {
+        "average_hours_visiting_full_location": 2,
+        "packages": []
+      },
+      "selected": true
+    },
+    {
+      "name": "Black Church",
+      "address": "Curtea Johannes Honterus 2, Brașov 500025, România",
+      "place_id": "ChIJpcyiedVbs0ARnQcRIXlsmhw",
+      "urlLocation": "https://maps.google.com/?cid=2061079046977030045",
+      "geometry_location": {
+        "lat": 45.6410928,
+        "lng": 25.5881637
+      },
+      "website": "http://www.bisericaneagra.ro/",
+      "arrayProgramPlace": [
+        "Monday: 12:00 – 5:40 PM",
+        "Tuesday: 10:00 AM – 5:40 PM",
+        "Wednesday: 10:00 AM – 5:40 PM",
+        "Thursday: 10:00 AM – 5:40 PM",
+        "Friday: 10:00 AM – 5:40 PM",
+        "Saturday: 10:00 AM – 5:40 PM",
+        "Sunday: 12:00 – 5:40 PM"
+      ],
+      "arrayWithLinkImages": [
+        "https://lh3.googleusercontent.com/places/ANXAkqHf2wNWr418ODGo_vlChW1IGZfQZTQtCkwK0m8XPVaES6OUZKN6IhwKG0ho7Xit0qx1fQgjNyzDV7mVCPD1SAO8cvhx1NoDra4=s1600-w3000"
+      ],
+      "index": 0,
+      "dataTimeLocation": {
+        "average_hours_visiting_full_location": 1.5,
+        "packages": []
+      },
+      "selected": true
+    },
+    {
+      "name": "Bran Castle",
+      "address": "Strada General Traian Moșoiu 24, Bran 507025, România",
+      "place_id": "ChIJMd4VpOVHs0ARf6sh2ZInks8",
+      "urlLocation": "https://maps.google.com/?cid=14957060824112409471",
+      "geometry_location": {
+        "lng": 25.3671637,
+        "lat": 45.51490219999999
+      },
+      "website": "https://castelulbran.ro/",
+      "arrayProgramPlace": [
+        "Monday: 12:00 – 4:00 PM",
+        "Tuesday: 9:00 AM – 4:00 PM",
+        "Wednesday: 9:00 AM – 4:00 PM",
+        "Thursday: 9:00 AM – 4:00 PM",
+        "Friday: 9:00 AM – 4:00 PM",
+        "Saturday: 9:00 AM – 4:00 PM",
+        "Sunday: 9:00 AM – 4:00 PM"
+      ],
+      "arrayWithLinkImages": [
+        "https://lh3.googleusercontent.com/places/ANXAkqEjXb_KpAvwsBvpLPukftMH6-JmqdvVQHJKD3jAI3qhNxkdKAnmJIzlNt1A0XSDP1JUBjCdtC28Xu_vOMlkzAIjBxuA9i20JRk=s1600-w3000"
+      ],
+      "index": 2,
+      "dataTimeLocation": {
+        "average_hours_visiting_full_location": 2,
+        "packages": []
+      },
+      "selected": true
+    },
+    {
+      "name": "Council Square",
+      "address": "Brașov, România",
+      "place_id": "ChIJ804d5npbs0ARBDErjy24yWk",
+      "urlLocation": "https://maps.google.com/?cid=7622826350116286724",
+      "geometry_location": {
+        "lng": 25.58917589999999,
+        "lat": 45.6421291
+      },
+      "website": "http://www.brasovcity.ro/",
+      "arrayProgramPlace": [
+        "Monday: Open 24 hours",
+        "Tuesday: Open 24 hours",
+        "Wednesday: Open 24 hours",
+        "Thursday: Open 24 hours",
+        "Friday: Open 24 hours",
+        "Saturday: Open 24 hours",
+        "Sunday: Open 24 hours"
+      ],
+      "arrayWithLinkImages": [
+        "https://lh3.googleusercontent.com/places/ANXAkqHmfPF1hClpHsYpLlN-iMVrLXqoar1FIK7qo9AtFUg6SUCMlApju6wSpbOhxd-81tJFyrMArFucaIjvzM4ahim8UBvP_wOuljU=s1600-w3000"
+      ],
+      "index": 3,
+      "dataTimeLocation": {
+        "average_hours_visiting_full_location": 1.5,
+        "packages": []
+      },
+      "selected": true
+    },
+    {
+      "name": "Tampa Mountain",
+      "address": "Strada Poiana Soarelui 237, Brașov 500001, Rumänien",
+      "place_id": "ChIJmz7yCZ5cs0ARRCh-ktCdizY",
+      "urlLocation": "https://maps.google.com/?cid=3930408618947389508",
+      "geometry_location": {
+        "lat": 45.6347187,
+        "lng": 25.5943945
+      },
+      "website": "",
+      "arrayProgramPlace": [
+        "Monday: 12:00 – 5:00 PM",
+        "Tuesday: 9:30 AM – 5:00 PM",
+        "Wednesday: 9:30 AM – 5:00 PM",
+        "Thursday: 9:30 AM – 5:00 PM",
+        "Friday: 9:30 AM – 5:00 PM",
+        "Saturday: 9:30 AM – 6:00 PM",
+        "Sunday: 9:30 AM – 6:00 PM"
+      ],
+      "arrayWithLinkImages": [
+        "https://lh3.googleusercontent.com/place-photos/ADOriq2AGyzCCzdYvRCAMZNbb9PGvaq9Rm6nIj6CzWbv8KvxoO6jNzyhaLQpvt9M7bfa_jNZJlNY-f9QW-FAbpJ0y42yUm5X2Mv_mNQuI0OFNmnarJCAZM0aAq8fC297jd2xr5Czfr9FnA=s1600-w3000"
+      ],
+      "index": 4,
+      "dataTimeLocation": {
+        "average_hours_visiting_full_location": 3,
+        "packages": []
+      },
+      "selected": true
+    }
+]

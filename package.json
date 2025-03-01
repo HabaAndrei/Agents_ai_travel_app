@@ -12,5 +12,8 @@
     "nodemailer": "^6.9.15",
     "openai": "^4.61.0",
     "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
   }
 }
