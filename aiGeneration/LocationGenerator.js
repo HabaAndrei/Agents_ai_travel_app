@@ -341,6 +341,10 @@ class LocationGenerator extends OpenaiClient {
       const responseImageCity =  await this.getUrlImageCity({city,  country});
       const urlImageCity = responseImageCity?.url;
 
+      if (!(dataFromGoogleCalls?.filter((response)=>response?.isResolved))?.length){
+        return {isResolved: false, err: 'Unfortunately, all API calls had a bad response'};
+      }
+
       /** associate details from google api with locations and create the response */
       let arrayWithAllLocations = [];
       for(let details of dataFromGoogleCalls){
