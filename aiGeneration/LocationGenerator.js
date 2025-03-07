@@ -96,8 +96,8 @@ class LocationGenerator extends OpenaiClient {
         console.log(`Place: ${place} => value: addressAndIdPlace.data.places[0] from function locationDetailsFromGoogleApi is undefined`);
         return {isResolved: false, err: 'value: addressAndIdPlace.data.places[0] from function locationDetailsFromGoogleApi is undefined'}
       }
-      const address = addressAndIdPlace.data.places[0].formattedAddress;
-      const place_id = addressAndIdPlace.data.places[0].id;
+      const address = addressAndIdPlace.data.places[0]?.formattedAddress;
+      const place_id = addressAndIdPlace.data.places[0]?.id;
       /** If the place already exists in the database, I send the data from the database */
       if(place_id){
         const docRef = doc(this.db, "places", place_id);
@@ -110,18 +110,19 @@ class LocationGenerator extends OpenaiClient {
       }
 
       /** get details based on place id */
-      const detailsPlace = await axios.post(`https://maps.googleapis.com/maps/api/place/details/json?language=en%2Cfields=geometry%2Cname%2Copening_hours%2Cphotos%2Cwebsite%2Curl&place_id=${place_id}&key=${apiKeyGoogleMaps}`);
+      const detailsPlace = await axios.get(`https://places.googleapis.com/v1/places/${place_id}?fields=location,location,displayName,currentOpeningHours,websiteUri,googleMapsUri,photos&key=${apiKeyGoogleMaps}`);
 
-      const {url, website, name} = detailsPlace?.data?.result;
-      const urlLocation = url;
-      const geometry_location = detailsPlace?.data?.result?.geometry?.location;
-      const arrayProgramPlace = detailsPlace?.data?.result?.opening_hours?.weekday_text;
-      const referincesPhotosArray = detailsPlace?.data?.result?.photos?.map((ob)=>ob.photo_reference);
+      const geometry_location = detailsPlace.data.location;
+      const name = detailsPlace.data.displayName.text;
+      const arrayProgramPlace = detailsPlace.data?.currentOpeningHours?.weekdayDescriptions;
+      const website = detailsPlace.data.websiteUri;
+      const urlLocation = detailsPlace.data.googleMapsUri;
+      const photosNames = detailsPlace.data.photos.map((i)=>i.name);
 
       /** get image link for each reference */
       let arrayWithLinkImages = [];
-      const arrayWithPromisesImages = referincesPhotosArray.map((ref)=>{
-        return this.getImgLink(ref);
+      const arrayWithPromisesImages = photosNames.map((name)=>{
+        return this.getImgLink(name);
       })
       const arrayWithResponsePromisesImages = await Promise.all(arrayWithPromisesImages);
       for(let rez of arrayWithResponsePromisesImages){
