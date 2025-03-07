@@ -63,11 +63,11 @@ class LocationGenerator extends OpenaiClient {
   }
 
   /** this function returns link image for a specific reference, i do this with google api */
-  async getImgLink(reference){
+  async getImgLink(name){
     let rezFin = {isResolved: true, url: ''};
     try{
-      const data = await axios.get(`https://maps.googleapis.com/maps/api/place/photo?maxwidth=3000&photoreference=${reference}&key=${apiKeyGoogleMaps}`)
-      const url = data.request.res.responseUrl;
+      const data = await axios.get(`https://places.googleapis.com/v1/${name}/media?key=${api_key}&maxWidthPx=3000`);
+      const {url} = data.config;
       rezFin = {isResolved:true, url};
     }catch(err){
       rezFin = {isResolved:false, err: err?.message};
