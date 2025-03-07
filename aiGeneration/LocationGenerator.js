@@ -66,7 +66,7 @@ class LocationGenerator extends OpenaiClient {
   async getImgLink(name){
     let rezFin = {isResolved: true, url: ''};
     try{
-      const data = await axios.get(`https://places.googleapis.com/v1/${name}/media?key=${api_key}&maxWidthPx=3000`);
+      const data = await axios.get(`https://places.googleapis.com/v1/${name}/media?key=${apiKeyGoogleMaps}&maxWidthPx=3000`);
       const {url} = data.config;
       rezFin = {isResolved:true, url};
     }catch(err){
