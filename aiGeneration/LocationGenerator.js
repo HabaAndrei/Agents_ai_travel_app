@@ -79,17 +79,25 @@ class LocationGenerator extends OpenaiClient {
   async getLocationDetailsFromGoogleApi({place, aliasLocation, description, indexPlace, city, country}){
     try{
       // create the url based on the api specification
-      const input = [place, description, 'like', aliasLocation, 'City:', city, 'Country:', country].join('%20');
-      const requestFormat = input.replaceAll(' ', '%20');
-      const addressAndIdPlace = await axios.post(`https://maps.googleapis.com/maps/api/place/findplacefromtext/json?fields=formatted_address%2Cplace_id&input=${requestFormat}&inputtype=textquery&key=${apiKeyGoogleMaps}`);
-      // verify to exist the location and get the place id
-      if(!addressAndIdPlace?.data?.candidates?.[0]){
-        console.log(`Place: ${place} => value: addressAndIdPlace?.data?.candidates?.[0] from function locationDetailsFromGoogleApi is undefined`);
-        return {isResolved: false, err: 'value: addressAndIdPlace?.data?.candidates?.[0] from function locationDetailsFromGoogleApi is undefined'}
-      }
-      const {formatted_address, place_id} = addressAndIdPlace?.data?.candidates?.[0];
-      const address = formatted_address;
+      const input = [place, description, 'like', aliasLocation, 'City:', city, 'Country:', country].join(' ');
+      const addressAndIdPlace = await axios.post(`https://places.googleapis.com/v1/places:searchText`,
+        {"textQuery" : input},
+        {
+          headers: {
+              'Content-Type': 'application/json',
+              'X-Goog-Api-Key': apiKeyGoogleMaps,
+              'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.id'
+          }
+        }
+      )
 
+      // verify to exist the location and get the place id
+      if(!addressAndIdPlace.data.places[0]){
+        console.log(`Place: ${place} => value: addressAndIdPlace.data.places[0] from function locationDetailsFromGoogleApi is undefined`);
+        return {isResolved: false, err: 'value: addressAndIdPlace.data.places[0] from function locationDetailsFromGoogleApi is undefined'}
+      }
+      const address = addressAndIdPlace.data.places[0].formattedAddress;
+      const place_id = addressAndIdPlace.data.places[0].id;
       /** If the place already exists in the database, I send the data from the database */
       if(place_id){
         const docRef = doc(this.db, "places", place_id);
