@@ -5,8 +5,8 @@
       "place_id": "ChIJT6hpdk1Fs0ARkzuI5gqLByo",
       "urlLocation": "https://maps.google.com/?cid=3028542153363569555",
       "geometry_location": {
-        "lng": 25.4693556,
-        "lat": 45.5904748
+        "longitude": 25.4693556,
+        "latitude": 45.5904748
       },
       "website": "",
       "arrayProgramPlace": [
@@ -34,8 +34,8 @@
       "place_id": "ChIJpcyiedVbs0ARnQcRIXlsmhw",
       "urlLocation": "https://maps.google.com/?cid=2061079046977030045",
       "geometry_location": {
-        "lat": 45.6410928,
-        "lng": 25.5881637
+        "latitude": 45.6410928,
+        "longitude": 25.5881637
       },
       "website": "http://www.bisericaneagra.ro/",
       "arrayProgramPlace": [
@@ -63,8 +63,8 @@
       "place_id": "ChIJMd4VpOVHs0ARf6sh2ZInks8",
       "urlLocation": "https://maps.google.com/?cid=14957060824112409471",
       "geometry_location": {
-        "lng": 25.3671637,
-        "lat": 45.51490219999999
+        "longitude": 25.3671637,
+        "latitude": 45.51490219999999
       },
       "website": "https://castelulbran.ro/",
       "arrayProgramPlace": [
@@ -92,8 +92,8 @@
       "place_id": "ChIJ804d5npbs0ARBDErjy24yWk",
       "urlLocation": "https://maps.google.com/?cid=7622826350116286724",
       "geometry_location": {
-        "lng": 25.58917589999999,
-        "lat": 45.6421291
+        "longitude": 25.58917589999999,
+        "latitude": 45.6421291
       },
       "website": "http://www.brasovcity.ro/",
       "arrayProgramPlace": [
@@ -121,8 +121,8 @@
       "place_id": "ChIJmz7yCZ5cs0ARRCh-ktCdizY",
       "urlLocation": "https://maps.google.com/?cid=3930408618947389508",
       "geometry_location": {
-        "lat": 45.6347187,
-        "lng": 25.5943945
+        "latitude": 45.6347187,
+        "longitude": 25.5943945
       },
       "website": "",
       "arrayProgramPlace": [
