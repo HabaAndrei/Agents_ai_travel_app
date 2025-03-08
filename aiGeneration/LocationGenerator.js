@@ -27,18 +27,18 @@ class LocationGenerator extends OpenaiClient {
         return {isResolved: true, url: data.url};
       }
 
-      // call google api to get the image
-      const requestFormat = location.replaceAll(' ', '%20');
       /** get id o the place */
-      const data = await axios.post(`https://maps.googleapis.com/maps/api/place/findplacefromtext/json?fields=place_id&input=${requestFormat}&inputtype=textquery&key=${apiKeyGoogleMaps}`);
-      const place_id = data?.data?.candidates?.[0]?.place_id;
+      const {place_id} = await this.getPlaceIdAndAddress(location);
       if ( !place_id ) return {'isResolved': false};
-      /** get image's reference */
-      const detailsPlace = await axios.post(`https://maps.googleapis.com/maps/api/place/details/json?fields=photos&place_id=${place_id}&key=${apiKeyGoogleMaps}`);
-      const reference = detailsPlace?.data?.result?.photos?.[0]?.photo_reference;
+
+      /** get image's name */
+      const detailsPlace = await this.getDetailsPlaces({place_id, fields: 'photos'})
+      const name = detailsPlace.data.photos[0].name;
+
       /** get image url */
-      const resultUrl = await this.getImgLink(reference);
-      if (!resultUrl.isResolved) return {'isResolved': false};;
+      const resultUrl = await this.getImgLink(name);
+      if (!resultUrl.isResolved) return {'isResolved': false};
+
       // store the url in database
       if (resultUrl.url) {
         if(place_id)setDoc(doc(this.db, "image_places", location), {url: resultUrl.url});
@@ -359,10 +359,8 @@ class LocationGenerator extends OpenaiClient {
       };
 
       /** get url image of the city */
-
-      // const responseImageCity =  await this.getUrlImageCity({city,  country});
-      // const urlImageCity = responseImageCity?.url;
-      const urlImageCity = '';
+      const responseImageCity =  await this.getUrlImageCity({city,  country});
+      const urlImageCity = responseImageCity?.url;
 
       if (!(dataFromGoogleCalls?.filter((response)=>response?.isResolved))?.length){
         return {isResolved: false, err: 'Unfortunately, all API calls had a bad response'};
