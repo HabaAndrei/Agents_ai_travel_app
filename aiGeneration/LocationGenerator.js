@@ -75,29 +75,40 @@ class LocationGenerator extends OpenaiClient {
     return rezFin;
   }
 
+  async getPlaceIdAndAddress(textQuery){
+    const addressAndIdPlace = await axios.post(`https://places.googleapis.com/v1/places:searchText`,
+      {"textQuery" : textQuery},
+      {
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Goog-Api-Key': apiKeyGoogleMaps,
+            'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.id'
+        }
+      }
+    )
+
+    // verify to exist the location and get the place id
+    if(!addressAndIdPlace.data.places[0]){
+      console.log(`Place: ${place} => value: addressAndIdPlace.data.places[0] from function locationDetailsFromGoogleApi is undefined`);
+      return {isResolved: false, err: 'value: addressAndIdPlace.data.places[0] from function locationDetailsFromGoogleApi is undefined'}
+    }
+    const address = addressAndIdPlace.data.places[0]?.formattedAddress;
+    const place_id = addressAndIdPlace.data.places[0]?.id;
+    return {address, place_id};
+  }
+
+  async getDetailsPlaces({place_id, fields}){
+    const detailsPlace = await axios.get(`https://places.googleapis.com/v1/places/${place_id}?fields=${fields}&key=${apiKeyGoogleMaps}`);
+    return detailsPlace;
+  }
+
   /** This function retrieves location details from the Google Maps API */
   async getLocationDetailsFromGoogleApi({place, aliasLocation, description, indexPlace, city, country}){
     try{
       // create the url based on the api specification
-      const input = [place, description, 'like', aliasLocation, 'City:', city, 'Country:', country].join(' ');
-      const addressAndIdPlace = await axios.post(`https://places.googleapis.com/v1/places:searchText`,
-        {"textQuery" : input},
-        {
-          headers: {
-              'Content-Type': 'application/json',
-              'X-Goog-Api-Key': apiKeyGoogleMaps,
-              'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.id'
-          }
-        }
-      )
+      const textQuery = [place, description, 'like', aliasLocation, 'City:', city, 'Country:', country].join(' ');
+      const {place_id, address} = await this.getPlaceIdAndAddress(textQuery)
 
-      // verify to exist the location and get the place id
-      if(!addressAndIdPlace.data.places[0]){
-        console.log(`Place: ${place} => value: addressAndIdPlace.data.places[0] from function locationDetailsFromGoogleApi is undefined`);
-        return {isResolved: false, err: 'value: addressAndIdPlace.data.places[0] from function locationDetailsFromGoogleApi is undefined'}
-      }
-      const address = addressAndIdPlace.data.places[0]?.formattedAddress;
-      const place_id = addressAndIdPlace.data.places[0]?.id;
       /** If the place already exists in the database, I send the data from the database */
       if(place_id){
         const docRef = doc(this.db, "places", place_id);
@@ -110,7 +121,8 @@ class LocationGenerator extends OpenaiClient {
       }
 
       /** get details based on place id */
-      const detailsPlace = await axios.get(`https://places.googleapis.com/v1/places/${place_id}?fields=location,location,displayName,currentOpeningHours,websiteUri,googleMapsUri,photos&key=${apiKeyGoogleMaps}`);
+      const fields = 'location,location,displayName,currentOpeningHours,websiteUri,googleMapsUri,photos';
+      const detailsPlace = await getDetailsPlaces({place_id, fields})
 
       const geometry_location = detailsPlace.data.location;
       const name = detailsPlace.data.displayName.text;
@@ -347,8 +359,10 @@ class LocationGenerator extends OpenaiClient {
       };
 
       /** get url image of the city */
-      const responseImageCity =  await this.getUrlImageCity({city,  country});
-      const urlImageCity = responseImageCity?.url;
+
+      // const responseImageCity =  await this.getUrlImageCity({city,  country});
+      // const urlImageCity = responseImageCity?.url;
+      const urlImageCity = '';
 
       if (!(dataFromGoogleCalls?.filter((response)=>response?.isResolved))?.length){
         return {isResolved: false, err: 'Unfortunately, all API calls had a bad response'};
