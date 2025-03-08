@@ -67,7 +67,7 @@ class LocationGenerator extends OpenaiClient {
     let rezFin = {isResolved: true, url: ''};
     try{
       const data = await axios.get(`https://places.googleapis.com/v1/${name}/media?key=${apiKeyGoogleMaps}&maxWidthPx=3000`);
-      const {url} = data.config;
+      const url = data?.request?.res?.responseUrl;
       rezFin = {isResolved:true, url};
     }catch(err){
       rezFin = {isResolved:false, err: err?.message};
@@ -82,7 +82,7 @@ class LocationGenerator extends OpenaiClient {
         headers: {
             'Content-Type': 'application/json',
             'X-Goog-Api-Key': apiKeyGoogleMaps,
-            'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.id'
+            'X-Goog-FieldMask': 'places.formattedAddress,places.id'
         }
       }
     )
@@ -122,7 +122,7 @@ class LocationGenerator extends OpenaiClient {
 
       /** get details based on place id */
       const fields = 'location,location,displayName,currentOpeningHours,websiteUri,googleMapsUri,photos';
-      const detailsPlace = await getDetailsPlaces({place_id, fields})
+      const detailsPlace = await this.getDetailsPlaces({place_id, fields})
 
       const geometry_location = detailsPlace.data.location;
       const name = detailsPlace.data.displayName.text;
