@@ -4,6 +4,7 @@ const z = require("zod");
 const OpenaiClient = require('../providers/OpenaiClient');
 const Firebase = require('../providers/Firebase.js');
 const EnvConfig = require('../providers/EnvConfig.js');
+const fs = require('fs');
 
 const apiKeyGoogleMaps = EnvConfig.getInstance().get('API_KEY_GOOGLE_MAP');
 
@@ -64,15 +65,21 @@ class LocationGenerator extends OpenaiClient {
 
   /** this function returns link image for a specific reference, i do this with google api */
   async getImgLink(name){
-    let rezFin = {isResolved: true, url: ''};
     try{
-      const data = await axios.get(`https://places.googleapis.com/v1/${name}/media?key=${apiKeyGoogleMaps}&maxWidthPx=3000`);
-      const url = data?.request?.res?.responseUrl;
-      rezFin = {isResolved:true, url};
+      // get image buffer
+      const data = await axios.get(
+        `https://places.googleapis.com/v1/${name}/media?key=${apiKeyGoogleMaps}&maxWidthPx=3000`,
+        {responseType: "arraybuffer"}
+      );
+      // remove parts of url
+      const url = (data.request.res.responseUrl).replace('https://lh3.googleusercontent.com/place-photos/', '');
+      // store the image localy
+      // ( to access the image from server: server address + /images/ + url + .jpg )
+      fs.writeFileSync(`./images/${url}.jpg`, data.data);
+      return {isResolved: true, url: url ? url : '' };
     }catch(err){
-      rezFin = {isResolved:false, err: err?.message};
+      return {isResolved: false, err: err?.message};
     }
-    return rezFin;
   }
 
   async getPlaceIdAndAddress(textQuery){
