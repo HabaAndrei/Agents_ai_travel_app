@@ -72,10 +72,16 @@ class LocationGenerator extends OpenaiClient {
         {responseType: "arraybuffer"}
       );
       // remove parts of url
-      const url = (data.request.res.responseUrl).replace('https://lh3.googleusercontent.com/place-photos/', '');
+      const responseUrl = data.request.res.responseUrl;
+      const lastIndex = responseUrl.lastIndexOf('/');
+      const url = responseUrl.slice(lastIndex + 1, responseUrl.length);
       // store the image localy
       // ( to access the image from server: server address + /images/ + url + .jpg )
-      fs.writeFileSync(`./images/${url}.jpg`, data.data);
+      const path = `./images/${url}.jpg`;
+      // if the file exists send the url
+      if (fs.existsSync(path)) return {isResolved: true, url};
+      // if the file doesn t exist, we store it
+      fs.createWriteStream(path).write(data.data);
       return {isResolved: true, url: url ? url : '' };
     }catch(err){
       return {isResolved: false, err: err?.message};
@@ -136,7 +142,8 @@ class LocationGenerator extends OpenaiClient {
       const arrayProgramPlace = detailsPlace.data?.currentOpeningHours?.weekdayDescriptions;
       const website = detailsPlace.data.websiteUri;
       const urlLocation = detailsPlace.data.googleMapsUri;
-      const photosNames = detailsPlace.data.photos.map((i)=>i.name);
+      // get only 6 photo names
+      const photosNames = detailsPlace.data.photos?.map((i)=>i.name)?.slice(0, 6);
 
       /** get image link for each reference */
       let arrayWithLinkImages = [];
