@@ -3,3 +3,7 @@
 /test
 /images/*
 !.gitkeep
+
+# macOS
+.DS_Store
+*.pem
