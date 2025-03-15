@@ -12,6 +12,8 @@ const validateFieldsAiGeneration = require('./middlewares/validateFieldsAiGenera
 app.use(cors());
 app.use(express.json());
 
+app.use(express.static('public'));
+app.use('/images', express.static('images'));
 
 ///////////////////////////////////
 // instances of classes
