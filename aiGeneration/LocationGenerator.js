@@ -5,6 +5,7 @@ const OpenaiClient = require('../providers/OpenaiClient');
 const Firebase = require('../providers/Firebase.js');
 const EnvConfig = require('../providers/EnvConfig.js');
 const fs = require('fs');
+const sharp = require('sharp');
 
 const apiKeyGoogleMaps = EnvConfig.getInstance().get('API_KEY_GOOGLE_MAP');
 
