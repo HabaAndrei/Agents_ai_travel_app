@@ -80,8 +80,11 @@ class LocationGenerator extends OpenaiClient {
       const path = `./images/${url}.jpg`;
       // if the file exists send the url
       if (fs.existsSync(path)) return {isResolved: true, url};
-      // if the file doesn t exist, we store it
-      fs.createWriteStream(path).write(data.data);
+      // if the file doesn t exist, we store it compressed
+      await sharp(data.data)
+        .resize({ width: 800 })
+        .jpeg({ quality: 70 })
+        .toFile(path);
       return {isResolved: true, url: url ? url : '' };
     }catch(err){
       return {isResolved: false, err: err?.message};
