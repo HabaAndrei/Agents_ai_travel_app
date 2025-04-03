@@ -8,7 +8,7 @@ const envVariable = EnvConfig.getInstance();
 class Firebase {
 
   static firebaseConfig = {
-    apiKey: envVariable.get('APIKEY'),
+    apiKey: envVariable.get('API_KEY'),
     authDomain: envVariable.get('AUTH_DOMAIN'),
     projectId: envVariable.get('PROJECT_ID'),
     storageBucket: envVariable.get('STORAGE_BUCKET'),
