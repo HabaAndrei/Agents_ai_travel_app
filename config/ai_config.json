@@ -1,3 +1,4 @@
 {
-  "ai_model": "gpt-4o-mini"
+  "ai_model": "gpt-4o-mini",
+  "ai_model_image": "gpt-4o-mini"
 }
