@@ -88,6 +88,15 @@ app.post('/send-code-email-verification', async (req, res) => {
   res.send(result);
 });
 
+app.post('/find-image-location', async (req, res) => {
+  const base64Image = req.body?.image;
+  if (!base64Image) {
+    res.send({ isResolved: false, err: 'Please add base64Image' });
+    return;
+  }
+  const imageDetails = await imageLocationGenerator.findLocation(base64Image)
+  res.send(imageDetails);
+})
 
 app.listen(5050, ()=>{
   console.log('express in listening on port 5050')
