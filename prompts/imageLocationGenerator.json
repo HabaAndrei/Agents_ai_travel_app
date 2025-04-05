@@ -1,6 +1,16 @@
 {
-    "getImageDetails": {
-        "prompt": "You are the best at detecting places on Earth. Please tell me the location of this image or the name of the building",
-        "replace" : []
+  "getImageDetails": {
+    "prompt": "You are the best at detecting places on Earth. Please tell me the location of this image or the name of the building",
+    "replace" : []
+  },
+  "structureDescription": {
+    "systemPrompt": {
+      "content": "Please structure the details according to the provided JSON schema.",
+      "replace": []
+    },
+    "userPrompt": {
+      "content": "Please structure the following details according to the JSON schema: ${details}",
+      "replace": ["${details}"]
     }
+  }
 }
