@@ -1,0 +1,6 @@
+{
+    "getImageDetails": {
+        "prompt": "You are the best at detecting places on Earth. Please tell me the location of this image or the name of the building",
+        "replace" : []
+    }
+}
