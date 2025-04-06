@@ -34,6 +34,18 @@ class Firebase {
 
   }
 
+  async verifyIdToken(user_token){
+    try {
+      let rez = await admin.auth().verifyIdToken(user_token);
+      if (!rez.uid) {
+        return {isResolved: false};
+      }
+      return {isResolved: true};
+    }catch(err){
+      return {isResolved: false};
+    }
+  }
+
 }
 
 module.exports = Firebase
