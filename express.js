@@ -5,12 +5,15 @@ const ActivityGenerator = require('./aiGeneration/ActivityGenerator.js');
 const LocationGenerator = require('./aiGeneration/LocationGenerator.js');
 const ProgramGenerator = require('./aiGeneration/ProgramGenerator.js');
 const ChatResponseGenerator = require('./aiGeneration/ChatResponseGenerator.js');
+const ImageLocationGenerator = require('./aiGeneration/ImageLocationGenerator.js');
 const Mailer = require('./mailer/Mailer.js')
 const DestinationSearch = require('./diverse/DestinationSearch.js')
 const EmailContentProvider = require('./mailer/EmailContentProvider.js');
 const validateFieldsAiGeneration = require('./middlewares/validateFieldsAiGeneration');
+
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 app.use(express.static('public'));
 app.use('/images', express.static('images'));
@@ -22,6 +25,7 @@ const activityGenerator = new ActivityGenerator();
 const locationGenerator = new LocationGenerator();
 const programGenerator = new ProgramGenerator();
 const chatResponseGenerator = new ChatResponseGenerator();
+const imageLocationGenerator = new ImageLocationGenerator();
 
 ///////////////////////////////////
 
@@ -84,6 +88,15 @@ app.post('/send-code-email-verification', async (req, res) => {
   res.send(result);
 });
 
+app.post('/find-image-location', async (req, res) => {
+  const base64Image = req.body?.image;
+  if (!base64Image) {
+    res.send({ isResolved: false, err: 'Please add base64Image' });
+    return;
+  }
+  const imageDetails = await imageLocationGenerator.findLocation(base64Image)
+  res.send(imageDetails);
+})
 
 app.listen(5050, ()=>{
   console.log('express in listening on port 5050')

@@ -72,6 +72,36 @@ class OpenaiClient {
     }
   }
 
+  async llImageDetails({prompt, base64Image, details}){
+
+    // details => low / high
+    if (!details) details = "low";
+
+    try {
+      const response = await openai_client.responses.create({
+        model: loader.get('ai_model_image'),
+        input: [{
+          role: "user",
+          content: [
+            {
+              type: "input_text",
+              text: prompt
+            },
+            {
+              type: "input_image",
+              image_url: base64Image,
+              detail: details,
+            },
+          ],
+        }],
+      });
+      return {isResolved: true, data: response?.output_text};
+    }catch (err) {
+      console.log('COD_03 => ', {err});
+      return {isResolved: false, err};
+    }
+  }
+
 }
 
 module.exports = OpenaiClient;
