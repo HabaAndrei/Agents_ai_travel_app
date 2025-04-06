@@ -1,6 +1,5 @@
-const {initializeApp} = require("firebase/app");
-const {getFirestore} = require("firebase/firestore");
 const EnvConfig = require('./EnvConfig.js');
+const admin = require("firebase-admin");
 
 const envVariable = EnvConfig.getInstance();
 
@@ -8,21 +7,27 @@ const envVariable = EnvConfig.getInstance();
 class Firebase {
 
   static firebaseConfig = {
-    apiKey: envVariable.get('API_KEY'),
-    authDomain: envVariable.get('AUTH_DOMAIN'),
-    projectId: envVariable.get('PROJECT_ID'),
-    storageBucket: envVariable.get('STORAGE_BUCKET'),
-    messagingSenderId: envVariable.get('MESSAGING_SENDER_ID'),
-    appId: envVariable.get('APP_ID'),
-    measurementId: envVariable.get('MEASUREMENT_ID')
+    type: envVariable.get('GOOGLE_SERVICE_ACCOUNT_TYPE'),
+    project_id: envVariable.get('GOOGLE_SERVICE_ACCOUNT_PROJECT_ID'),
+    private_key_id: envVariable.get('GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY_ID'),
+    private_key: envVariable.get('GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY').replace(/\\n/g, '\n'),
+    client_email: envVariable.get('GOOGLE_SERVICE_ACCOUNT_CLIENT_EMAIL'),
+    client_id: envVariable.get('GOOGLE_SERVICE_ACCOUNT_CLIENT_ID'),
+    auth_uri: envVariable.get('GOOGLE_SERVICE_ACCOUNT_AUTH_URI'),
+    token_uri: envVariable.get('GOOGLE_SERVICE_ACCOUNT_TOKEN_URI'),
+    auth_provider_x509_cert_url: envVariable.get('GOOGLE_SERVICE_ACCOUNT_AUTH_PROVIDER_X509_CERT_URL'),
+    client_x509_cert_url: envVariable.get('GOOGLE_SERVICE_ACCOUNT_CLIENT_X509_CERT_URL'),
+    universe_domain: envVariable.get('GOOGLE_SERVICE_ACCOUNT_UNIVERSE_DOMAIN'),
   };
 
   constructor(){
 
     if (!Firebase.instace){
       Firebase.instace = this;
-      const app_firebase = initializeApp(Firebase.firebaseConfig);
-      this.db = getFirestore(app_firebase);
+      const app_firebase = admin.initializeApp({
+        credential: admin.credential.cert(Firebase.firebaseConfig)
+      });
+      this.db = app_firebase.firestore();
     }
 
     return Firebase.instace;
