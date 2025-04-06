@@ -1,5 +1,4 @@
 const axios = require('axios');
-const {setDoc, getDoc, doc} = require("firebase/firestore");
 const z = require("zod");
 const OpenaiClient = require('../providers/OpenaiClient');
 const Firebase = require('../providers/Firebase.js');
@@ -22,9 +21,9 @@ class LocationGenerator extends OpenaiClient {
       const location = [city, country].join(' ');
 
       /** verify if exist in database */
-      const docRef = doc(this.db, "image_places", location);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
+      const docRef = this.db.collection('image_places').doc(location);
+      const docSnap = await docRef.get();
+      if (docSnap.exists){
         const data = docSnap.data();
         return {isResolved: true, url: data.url};
       }
@@ -43,7 +42,7 @@ class LocationGenerator extends OpenaiClient {
 
       // store the url in database
       if (resultUrl.url) {
-        if(place_id)setDoc(doc(this.db, "image_places", location), {url: resultUrl.url});
+        if(place_id)this.db.collection('image_places').doc(location).set({url: resultUrl.url});
         return {'isResolved': true, url: resultUrl.url};
       }else{
         return {'isResolved': false}
@@ -128,10 +127,9 @@ class LocationGenerator extends OpenaiClient {
 
       /** If the place already exists in the database, I send the data from the database */
       if(place_id){
-        const docRef = doc(this.db, "places", place_id);
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
+        const docRef = this.db.collection('places').doc(place_id);
+        const docSnap = await docRef.get();
+        if (docSnap.exists){
           const data = docSnap.data();
           return {isResolved: true, data, index: indexPlace}
         }
@@ -173,7 +171,7 @@ class LocationGenerator extends OpenaiClient {
       }
 
       /** save the place in database */
-      if(place_id)setDoc(doc(this.db, "places", place_id), obData);
+      if(place_id)this.db.collection('places').doc(place_id).set(obData);
 
       // send the result
       return {isResolved: true, data: obData, index: indexPlace}
