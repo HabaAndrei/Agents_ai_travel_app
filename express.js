@@ -10,6 +10,7 @@ const Mailer = require('./mailer/Mailer.js')
 const DestinationSearch = require('./diverse/DestinationSearch.js')
 const EmailContentProvider = require('./mailer/EmailContentProvider.js');
 const validateFieldsAiGeneration = require('./middlewares/validateFieldsAiGeneration');
+const authenticatedUser = require('./middlewares/authenticatedUser.js');
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
@@ -29,7 +30,7 @@ const imageLocationGenerator = new ImageLocationGenerator();
 
 ///////////////////////////////////
 
-app.post('/ai-generation', validateFieldsAiGeneration, async (req, res)=>{
+app.post('/ai-generation', [validateFieldsAiGeneration, authenticatedUser], async (req, res)=>{
   let rezFinal = '';
 
   const {generationType, startDate, endDate, city, country, locations, customActivity, selectedActivities, hotelAddress,
@@ -88,7 +89,7 @@ app.post('/send-code-email-verification', async (req, res) => {
   res.send(result);
 });
 
-app.post('/find-image-location', async (req, res) => {
+app.post('/find-image-location', authenticatedUser, async (req, res) => {
   const base64Image = req.body?.image;
   if (!base64Image) {
     res.send({ isResolved: false, err: 'Please add base64Image' });
