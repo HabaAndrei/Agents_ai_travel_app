@@ -65,6 +65,20 @@
             "This is a chat feature where you can ask questions about the app’s functionalities and your trips.",
             "Start new conversations or delete the ones you no longer need."
           ]
+        },
+        "5": {
+          "title": "Find Place",
+          "steps": {
+            "step_1": [
+              "Upload an image from your gallery of a place you want to identify."
+            ],
+            "step_2": [
+              "Press the 'Analyse Image' button."
+            ],
+            "step_3": [
+              "Enjoy the description of the image."
+            ]
+          }
         }
       }
     },
