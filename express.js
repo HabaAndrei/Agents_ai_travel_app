@@ -9,8 +9,9 @@ const ImageLocationGenerator = require('./aiGeneration/ImageLocationGenerator.js
 const Mailer = require('./mailer/Mailer.js')
 const DestinationSearch = require('./diverse/DestinationSearch.js')
 const EmailContentProvider = require('./mailer/EmailContentProvider.js');
-const validateFieldsAiGeneration = require('./middlewares/validateFieldsAiGeneration');
-const authenticatedUser = require('./middlewares/authenticatedUser.js');
+const validateFieldsAiGeneration = require('./handlers/validateFieldsAiGeneration');
+const authenticatedUser = require('./handlers/authenticatedUser.js');
+const manageResponse = require('./handlers/manageResponse.js');
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
@@ -59,6 +60,7 @@ app.post('/ai-generation', [validateFieldsAiGeneration, authenticatedUser], asyn
       break;
     }
   }
+  manageResponse(generationType, rezFinal);
   res.send(rezFinal);
 });
 
@@ -84,6 +86,7 @@ app.post('/send-code-email-verification', async (req, res) => {
   // send the email using the Mailer class
   const mailer = new Mailer();
   const result = await mailer.sendEmail({ emailTo: email, subject, htmlContent });
+  manageResponse("send-code-email-verification", result);
 
   // send the result of the email operation as a response
   res.send(result);
@@ -96,9 +99,10 @@ app.post('/find-image-location', authenticatedUser, async (req, res) => {
     return;
   }
   const imageDetails = await imageLocationGenerator.findLocation(base64Image)
+  manageResponse("find-image-location", imageDetails);
   res.send(imageDetails);
 })
 
 app.listen(5050, ()=>{
-  console.log('express in listening on port 5050')
+  console.log('express is listening on port 5050')
 })
