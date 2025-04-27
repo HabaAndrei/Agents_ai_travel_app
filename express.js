@@ -12,6 +12,7 @@ const EmailContentProvider = require('./mailer/EmailContentProvider.js');
 const validateFieldsAiGeneration = require('./handlers/validateFieldsAiGeneration');
 const authenticatedUser = require('./handlers/authenticatedUser.js');
 const manageResponse = require('./handlers/manageResponse.js');
+const requestAuthorization = require('./handlers/requestAuthorization.js');
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
@@ -31,7 +32,7 @@ const imageLocationGenerator = new ImageLocationGenerator();
 
 ///////////////////////////////////
 
-app.post('/ai-generation', [validateFieldsAiGeneration], async (req, res)=>{
+app.post('/ai-generation', [requestAuthorization, validateFieldsAiGeneration], async (req, res)=>{
   let rezFinal = '';
 
   const {generationType, startDate, endDate, city, country, locations, customActivity, selectedActivities, hotelAddress,
