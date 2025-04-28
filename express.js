@@ -93,7 +93,7 @@ app.post('/send-code-email-verification', async (req, res) => {
   res.send(result);
 });
 
-app.post('/find-image-location', async (req, res) => {
+app.post('/find-image-location', [requestAuthorization], async (req, res) => {
   const base64Image = req.body?.image;
   if (!base64Image) {
     res.send({ isResolved: false, err: 'Please add base64Image' });
