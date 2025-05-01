@@ -149,13 +149,15 @@ class LocationGenerator extends OpenaiClient {
 
       /** get image link for each reference */
       let arrayWithLinkImages = [];
-      const arrayWithPromisesImages = photosNames.map((name)=>{
-        return this.getImgLink(name);
-      })
-      const arrayWithResponsePromisesImages = await Promise.all(arrayWithPromisesImages);
-      for(let rez of arrayWithResponsePromisesImages){
-        if(!rez.isResolved)continue;
-        else arrayWithLinkImages.push(rez.url)
+      if (photosNames?.length) {
+        const arrayWithPromisesImages = photosNames.map((name)=>{
+          return this.getImgLink(name);
+        })
+        const arrayWithResponsePromisesImages = await Promise.all(arrayWithPromisesImages);
+        for(let rez of arrayWithResponsePromisesImages){
+          if(!rez.isResolved)continue;
+          else arrayWithLinkImages.push(rez.url)
+        }
       }
 
       /** create the result object */
@@ -266,7 +268,7 @@ class LocationGenerator extends OpenaiClient {
     let rejectionReasonForProximityVerification = '';
     let resultLocations = '';
 
-    while ((count < 4) && !isRespectingTheRules) {
+    while ((count < 2) && !isRespectingTheRules) {
       console.log('Function called with count =>>> ', count);
       console.log(rejectionReasonForProximityVerification, ' <<<<< ========  Rejection reason ');
 
