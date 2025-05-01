@@ -132,7 +132,7 @@ class ProgramGenerator extends OpenaiClient {
     let resultProgram = '';
     let rejectionReasonForEfficiencyVerification = '';
 
-    while ((count < 4) && (!isRespectingTheRules || !isAllLocations )) {
+    while ((count < 2) && (!isRespectingTheRules || !isAllLocations )) {
       count += 1;
 
       // add in system prompt the rejection reason
@@ -325,7 +325,7 @@ class ProgramGenerator extends OpenaiClient {
     let isRespectingTheRules = false;
     let program = '';
 
-    while ((count < 4) && !isRespectingTheRules) {
+    while ((count < 2) && !isRespectingTheRules) {
       count += 1;
       const resultCompletionProgramDayLlm = await this.retryLlmCallWithSchema({systemPrompt, userPrompt, JsonSchema});
       program = resultCompletionProgramDayLlm?.data?.program;
