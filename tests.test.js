@@ -34,6 +34,27 @@ async function generateActivities({city, country}){
   return result.data
 }
 
+function testParallelActivities(){
+  test('run all activity generations in parallel', async () => {
+    const results = await Promise.all(
+      countriesCities.map(({ city, country }) =>
+        generateActivities({ city, country })
+      )
+    );
+
+    results.forEach((result, index) => {
+      console.log(index);
+      expect(result.isResolved).toBe(true);
+      expect(result.data.activities[0]).toBeDefined();
+      expect(result.paramsLocation.isResolved).toBe(true);
+      expect(result.paramsLocation.data).toBeDefined();
+      expect(typeof result.paramsLocation.data.local_places_and_tourist_places).toBe('boolean');
+      expect(result.paramsLocation.data.scale_visit).toBeDefined();
+    });
+  }, 20000);
+}
+// testParallelActivities();
+
 function testActivities(){
   test.each(countriesCities)('verify response from activities generator', async ({city, country}) => {
     const result = await generateActivities({city, country});
@@ -103,9 +124,8 @@ async function generateProgram(){
   const city = 'Brasov';
   const hotelAddress = '';
 
-  const result = await axios.post(serverAddress,
-    {generationType: 'generateProgram', startDate, endDate, city, country, locations, hotelAddress}
-  );
+  const body = {generationType: 'generateProgram', startDate, endDate, city, country, locations, hotelAddress};
+  const result = await axios.post(serverAddress, body, createHeader(body));
   return result.data;
 
 }
