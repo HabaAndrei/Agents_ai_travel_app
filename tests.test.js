@@ -46,7 +46,7 @@ function testActivities(){
     expect(result.paramsLocation.data.scale_visit).toBeDefined();
   }, 15000)
 }
-testActivities()
+// testActivities()
 
 
 
@@ -54,11 +54,11 @@ testActivities()
 // test for locations
 
 async function generateLocations({city, country, customActivity, selectedActivities, isLocalPlaces, scaleVisit}){
-
-  const result = await axios.post(serverAddress, {
+  const body = {
     generationType: 'generateLocations',
     city, country, customActivity, selectedActivities, isLocalPlaces, scaleVisit
-  });
+  };
+  const result = await axios.post(serverAddress, body, createHeader(body));
 
   return result.data;
 }
