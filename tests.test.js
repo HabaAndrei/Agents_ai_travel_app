@@ -11,7 +11,7 @@ const serverAddress = EnvConfig.getInstance().get('URL_SERVER')
 
 // command: jest tests.test.js
 
-// Problems: we have a limitation when we run 50 locations at once, the limitation is from open ai model
+// Problems: we have a limitation when we run 50 locations at once, the limitation is from open ai model and google api
 
 
 function createHeader(body){
