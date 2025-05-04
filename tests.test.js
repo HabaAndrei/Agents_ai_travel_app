@@ -84,6 +84,37 @@ async function generateLocations({city, country, customActivity, selectedActivit
   return result.data;
 }
 
+function testParallelLocations(){
+  test('run all locations generations in parallel', async () => {
+    const results = await Promise.all(
+      activities.map((details) => generateLocations(details))
+    );
+
+    results.forEach((result, index)=>{
+      console.log(index);
+      expect(result.isResolved).toBe(true);
+      expect(result.data).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            name: expect.any(String),
+            address: expect.any(String),
+            place_id: expect.any(String),
+            urlLocation: expect.any(String),
+            website: expect.any(String),
+            geometry_location: expect.any(Object),
+            arrayProgramPlace: expect.any(Array),
+            arrayWithLinkImages: expect.any(Array),
+            dataTimeLocation: expect.any(Object)
+
+          })
+        ]),
+        expect(result.urlImageCity).toBeDefined()
+      );
+    })
+  }, 2000000);
+}
+// testParallelLocations();
+
 function testLocations(){
   test.each(activities)('verify response from locations generator', async (details) => {
 
