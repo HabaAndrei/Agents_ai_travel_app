@@ -161,6 +161,49 @@ async function generateProgram(){
 
 }
 
+function testParallelProgram(){
+  test('run all programs generations in parallel', async () => {
+    let ar = [];
+    for (let i = 0 ; i <= 20; i++){
+      ar.push(i);
+    }
+    const results = await Promise.all(
+      ar.map((details) => generateProgram(details))
+    );
+
+    results.forEach((result, index)=>{
+      console.log(index);
+      expect(result.isResolved).toBe(true);
+      expect(result.data).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            day: expect.any(Number),
+            title: expect.any(String),
+            date: expect.any(String),
+            activities: expect.arrayContaining([
+              expect.objectContaining({
+                time: expect.any(String),
+                place: expect.any(String),
+                address: expect.any(String),
+                urlLocation: expect.any(String),
+                place_id: expect.any(String),
+                website: expect.any(String),
+                description: expect.any(String),
+                info: expect.any(String),
+                geometry_location: expect.any(Object),
+                arrayWithLinkImages: expect.any(Array),
+                dataTimeLocation: expect.any(Object),
+              })
+            ])
+          })
+        ])
+      )
+    })
+
+  }, 15000)
+}
+// testParallelProgram();
+
 function testProgram(){
   test.each(
     Array(20).fill()
