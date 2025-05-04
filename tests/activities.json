@@ -1,162 +1,162 @@
 [
-    {
-      "city": "Tokyo",
-      "country": "Japan",
-      "customActivity": "Best Sushi Experience",
-      "selectedActivities": [
-        "Temple Visits",
-        "Street Food Tours",
-        "Cherry Blossom Viewing",
-        "Anime and Manga Shops",
-        "Nightlife in Shibuya",
-        "Tea Ceremonies",
-        "Shopping in Harajuku"
-      ],
-      "isLocalPlaces": true,
-      "scaleVisit": 3
-    },
-    {
-      "city": "Paris",
-      "country": "France",
-      "customActivity": "Romantic Seine Cruise",
-      "selectedActivities": [
-        "Museum Visits",
-        "Wine Tasting",
-        "Historical Tours",
-        "Luxury Shopping",
-        "Photography Spots",
-        "Baking Classes",
-        "Picnic at Champ de Mars"
-      ],
-      "isLocalPlaces": true,
-      "scaleVisit": 3
-    },
-    {
-      "city": "New York",
-      "country": "USA",
-      "customActivity": "Broadway Show Night",
-      "selectedActivities": [
-        "Central Park Walks",
-        "Museum Hopping",
-        "Street Art Tours",
-        "Food Truck Tasting",
-        "Helicopter Tours",
-        "Brooklyn Bridge Walks",
-        "Shopping in Soho"
-      ],
-      "isLocalPlaces": false,
-      "scaleVisit": 3
-    },
-    {
-      "city": "Rio de Janeiro",
-      "country": "Brazil",
-      "customActivity": "Samba Night Experience",
-      "selectedActivities": [
-        "Beach Relaxation",
-        "Hiking Sugarloaf Mountain",
-        "Carnival Festival",
-        "Street Food Tastings",
-        "Favela Tours",
-        "Christ the Redeemer Visit",
-        "Boat Rides"
-      ],
-      "isLocalPlaces": true,
-      "scaleVisit": 3
-    },
-    {
-      "city": "Sydney",
-      "country": "Australia",
-      "customActivity": "Harbour Bridge Climb",
-      "selectedActivities": [
-        "Surfing at Bondi Beach",
-        "Wildlife Tours",
-        "Opera House Tours",
-        "Coastal Walks",
-        "Fine Dining Experiences",
-        "Harbour Cruises",
-        "Art Galleries"
-      ],
-      "isLocalPlaces": true,
-      "scaleVisit": 3
-    },
-    {
-      "city": "Cairo",
-      "country": "Egypt",
-      "customActivity": "Desert Safari",
-      "selectedActivities": [
-        "Pyramids Exploration",
-        "Camel Rides",
-        "Museum Visits",
-        "Local Market Shopping",
-        "River Nile Cruises",
-        "Traditional Food Tasting",
-        "Historical Tours"
-      ],
-      "isLocalPlaces": true,
-      "scaleVisit": 3
-    },
-    {
-      "city": "Barcelona",
-      "country": "Spain",
-      "customActivity": "Tapas Tour",
-      "selectedActivities": [
-        "Gaudi Architecture Tours",
-        "Beach Walks",
-        "Wine Tasting",
-        "Flamenco Shows",
-        "Nightlife in El Raval",
-        "Art Museum Visits",
-        "Local Markets"
-      ],
-      "isLocalPlaces": true,
-      "scaleVisit": 3
-    },
-    {
-      "city": "Reykjavik",
-      "country": "Iceland",
-      "customActivity": "Northern Lights Tour",
-      "selectedActivities": [
-        "Geothermal Spa Visits",
-        "Whale Watching",
-        "Waterfall Hikes",
-        "Glacier Tours",
-        "Local Cuisine Tasting",
-        "Aurora Photography",
-        "Lava Cave Explorations"
-      ],
-      "isLocalPlaces": false,
-      "scaleVisit": 3
-    },
-    {
-      "city": "Cape Town",
-      "country": "South Africa",
-      "customActivity": "Table Mountain Hike",
-      "selectedActivities": [
-        "Wine Tasting in Stellenbosch",
-        "Beach Walks",
-        "Penguin Watching",
-        "Historical Tours",
-        "Local Food Markets",
-        "Helicopter Rides",
-        "Safari Day Trips"
-      ],
-      "isLocalPlaces": true,
-      "scaleVisit": 3
-    },
-    {
-      "city": "Rome",
-      "country": "Italy",
-      "customActivity": "Colosseum Night Tour",
-      "selectedActivities": [
-        "Vatican Museums Visit",
-        "Gelato Tasting",
-        "Piazza Walks",
-        "Ancient Ruins Tours",
-        "Wine Tasting",
-        "Cooking Classes",
-        "Photography Walks"
-      ],
-      "isLocalPlaces": true,
-      "scaleVisit": 3
-    }
-  ]
+  {
+    "city": "Tokyo",
+    "country": "Japan",
+    "customActivity": "Best Sushi Experience",
+    "selectedActivities": [
+      "Temple Visits",
+      "Street Food Tours",
+      "Cherry Blossom Viewing",
+      "Anime and Manga Shops",
+      "Nightlife in Shibuya",
+      "Tea Ceremonies",
+      "Shopping in Harajuku"
+    ],
+    "isLocalPlaces": true,
+    "scaleVisit": 3
+  },
+  {
+    "city": "Paris",
+    "country": "France",
+    "customActivity": "Romantic Seine Cruise",
+    "selectedActivities": [
+      "Museum Visits",
+      "Wine Tasting",
+      "Historical Tours",
+      "Luxury Shopping",
+      "Photography Spots",
+      "Baking Classes",
+      "Picnic at Champ de Mars"
+    ],
+    "isLocalPlaces": true,
+    "scaleVisit": 3
+  },
+  {
+    "city": "New York",
+    "country": "USA",
+    "customActivity": "Broadway Show Night",
+    "selectedActivities": [
+      "Central Park Walks",
+      "Museum Hopping",
+      "Street Art Tours",
+      "Food Truck Tasting",
+      "Helicopter Tours",
+      "Brooklyn Bridge Walks",
+      "Shopping in Soho"
+    ],
+    "isLocalPlaces": false,
+    "scaleVisit": 3
+  },
+  {
+    "city": "Rio de Janeiro",
+    "country": "Brazil",
+    "customActivity": "Samba Night Experience",
+    "selectedActivities": [
+      "Beach Relaxation",
+      "Hiking Sugarloaf Mountain",
+      "Carnival Festival",
+      "Street Food Tastings",
+      "Favela Tours",
+      "Christ the Redeemer Visit",
+      "Boat Rides"
+    ],
+    "isLocalPlaces": true,
+    "scaleVisit": 3
+  },
+  {
+    "city": "Sydney",
+    "country": "Australia",
+    "customActivity": "Harbour Bridge Climb",
+    "selectedActivities": [
+      "Surfing at Bondi Beach",
+      "Wildlife Tours",
+      "Opera House Tours",
+      "Coastal Walks",
+      "Fine Dining Experiences",
+      "Harbour Cruises",
+      "Art Galleries"
+    ],
+    "isLocalPlaces": true,
+    "scaleVisit": 3
+  },
+  {
+    "city": "Cairo",
+    "country": "Egypt",
+    "customActivity": "Desert Safari",
+    "selectedActivities": [
+      "Pyramids Exploration",
+      "Camel Rides",
+      "Museum Visits",
+      "Local Market Shopping",
+      "River Nile Cruises",
+      "Traditional Food Tasting",
+      "Historical Tours"
+    ],
+    "isLocalPlaces": true,
+    "scaleVisit": 3
+  },
+  {
+    "city": "Barcelona",
+    "country": "Spain",
+    "customActivity": "Tapas Tour",
+    "selectedActivities": [
+      "Gaudi Architecture Tours",
+      "Beach Walks",
+      "Wine Tasting",
+      "Flamenco Shows",
+      "Nightlife in El Raval",
+      "Art Museum Visits",
+      "Local Markets"
+    ],
+    "isLocalPlaces": true,
+    "scaleVisit": 3
+  },
+  {
+    "city": "Reykjavik",
+    "country": "Iceland",
+    "customActivity": "Northern Lights Tour",
+    "selectedActivities": [
+      "Geothermal Spa Visits",
+      "Whale Watching",
+      "Waterfall Hikes",
+      "Glacier Tours",
+      "Local Cuisine Tasting",
+      "Aurora Photography",
+      "Lava Cave Explorations"
+    ],
+    "isLocalPlaces": false,
+    "scaleVisit": 3
+  },
+  {
+    "city": "Cape Town",
+    "country": "South Africa",
+    "customActivity": "Table Mountain Hike",
+    "selectedActivities": [
+      "Wine Tasting in Stellenbosch",
+      "Beach Walks",
+      "Penguin Watching",
+      "Historical Tours",
+      "Local Food Markets",
+      "Helicopter Rides",
+      "Safari Day Trips"
+    ],
+    "isLocalPlaces": true,
+    "scaleVisit": 3
+  },
+  {
+    "city": "Rome",
+    "country": "Italy",
+    "customActivity": "Colosseum Night Tour",
+    "selectedActivities": [
+      "Vatican Museums Visit",
+      "Gelato Tasting",
+      "Piazza Walks",
+      "Ancient Ruins Tours",
+      "Wine Tasting",
+      "Cooking Classes",
+      "Photography Walks"
+    ],
+    "isLocalPlaces": true,
+    "scaleVisit": 3
+  }
+]
