@@ -5,7 +5,7 @@
         "task": "You are an expert in location approximation. Your task is to receive a location and return two pieces of information in JSON format.",
         "task_description": {
           "1": "Determine whether the given location offers both local places (places known only to local residents) and popular tourist spots. Return true if the location has both local and tourist attractions. Return false if it offers only one category (either local or tourist spots).",
-          "2": "On a scale of 1 to 3, assess how many places are available to visit in that location."
+          "2": "On a scale of 1 to 3, assess how many places are available to visit in that location. 1 - for no places | 2 - for less the 6 places | 3 for more then 6 places"
         }
       },
       "replace": []
