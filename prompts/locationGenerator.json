@@ -32,7 +32,7 @@
   "generateLocations": {
     "systemPrompt": {
       "content": {
-        "task": "Your goal is to return a list of places I can visit as a tourist, based on a given location and a list of [activities]. The locations must not be repeated. ${numberOfPlacesPrompt}",
+        "task": "Your goal is to return a list of places I can visit as a tourist, based on a given location and a list of [activities]. The locations must not be repeated. ${numberOfPlacesPrompt}. The location names should be in English and in the language of the country where the place is located",
         "attention": "Ensure the locations provided match the given category of interest: ${categories}.",
         "verification": "Ensure that every activity has at least one associated location."
       },
