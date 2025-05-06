@@ -121,11 +121,20 @@ class LocationGenerator extends OpenaiClient {
   /** This function retrieves location details from the Google Maps API */
   async getLocationDetailsFromGoogleApi({place, aliasLocation, description, indexPlace, city, country}){
     try{
+
+      /** If the place already exists in the database (with the same name, country and city), I send the data from the database */
+      const citiesRef = this.db.collection('places');
+      const snapshot = await citiesRef.where('city', '==', city).where('country', '==', country).where('location', '==', place).get();
+      if (!snapshot.empty) {
+        const doc = snapshot?.docs?.[0];
+        return {isResolved: true, data: doc?.data(), index: indexPlace}
+      }
+
       // create the url based on the api specification
       const textQuery = [place, description, 'like', aliasLocation, 'City:', city, 'Country:', country].join(' ');
       const {place_id, address} = await this.getPlaceIdAndAddress(textQuery)
 
-      /** If the place already exists in the database, I send the data from the database */
+      /** If the place already exists in the database (with place id), I send the data from the database */
       if(place_id){
         const docRef = this.db.collection('places').doc(place_id);
         const docSnap = await docRef.get();
@@ -169,7 +178,9 @@ class LocationGenerator extends OpenaiClient {
         geometry_location: geometry_location ? geometry_location : '',
         website: website ? website : '',
         arrayProgramPlace: arrayProgramPlace ? arrayProgramPlace : [],
-        arrayWithLinkImages: arrayWithLinkImages ? arrayWithLinkImages : []
+        arrayWithLinkImages: arrayWithLinkImages ? arrayWithLinkImages : [],
+        city: city,
+        country: country
       }
 
       /** save the place in database */
@@ -335,7 +346,7 @@ class LocationGenerator extends OpenaiClient {
 
       /** json schema */
       const UniquePlacesSchema = z.object({
-      	name: z.string().describe(`The name in english. The name should be relevant. For example, if you are in Brașov, Romania, and choose Poiana Brașov, don't just say 'Poiana'; say 'Poiana Brașov,' the full name.`),
+      	name: z.string().describe(`The name of the place in english. The name should be relevant. For example, if you are in Brașov, Romania, and choose Poiana Brașov, don't just say 'Poiana'; say 'Poiana Brașov,' the full name in ENGLISH.`),
         alias: z.string().describe("The name in the country's languge"),
         description: z.string().describe('Only one word description e.g: road, mountain, lake, church, museum, restaurant, shop')
       })
