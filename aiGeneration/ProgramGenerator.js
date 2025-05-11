@@ -292,7 +292,7 @@ class ProgramGenerator extends OpenaiClient {
         // for each activity of day
         for(let activity of day.activities){
           /** Populate each activity with all the details about it. */
-          const {address, urlLocation, geometry_location, place_id, website, arrayWithLinkImages, dataTimeLocation, description, info}  = locations[activity.id];
+          const {address, urlLocation, geometry_location, place_id, website, arrayWithLinkImages, dataTimeLocation, description, info, tickets}  = locations[activity.id];
           activity.address = address ? address : '';
           activity.urlLocation = urlLocation ? urlLocation : '';
           activity.geometry_location = geometry_location ? geometry_location : '',
@@ -301,7 +301,8 @@ class ProgramGenerator extends OpenaiClient {
           activity.arrayWithLinkImages = arrayWithLinkImages && arrayWithLinkImages.length > 0 ? arrayWithLinkImages : [];
           activity.description = description ? description : '';
           activity.info = info ? info : '';
-          activity.dataTimeLocation = dataTimeLocation ? dataTimeLocation : {}
+          activity.dataTimeLocation = dataTimeLocation ? dataTimeLocation : {};
+          activity.tickets = tickets ? tickets : [];
         }
       }
 
