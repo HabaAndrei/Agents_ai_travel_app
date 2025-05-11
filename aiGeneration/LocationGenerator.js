@@ -16,6 +16,7 @@ class LocationGenerator extends OpenaiClient {
     this.db = new Firebase().db;
   }
 
+  /** await function */
   async awaitSeconds(seconds) {
     return new Promise(resolve => {
       setTimeout(() => {
@@ -42,6 +43,7 @@ class LocationGenerator extends OpenaiClient {
 
   async getTickets({name, latitude, longitude}){
 
+    /** put in url the affilate parameter */
     const createAffiliateUrl = (baseUrl) => {
       const separator = baseUrl.includes('?') ? '&' : '?';
       const affiliateLink = `${baseUrl}${separator}partner=travelbot-174935`;
@@ -55,11 +57,14 @@ class LocationGenerator extends OpenaiClient {
           'Accept': 'application/json'
         }
       })
+      // get products
       const products = a?.data?.products ?? [];
+      // filter the products that only have address
       const filtredProducts = products?.
         filter((product)=>product.venue.address && product.venue.postal_code)?.
         map((product)=>{
           return {
+            // Get only the title of the product and url
             product_url: createAffiliateUrl(product?.product_url),
             titile: product.title
           }
