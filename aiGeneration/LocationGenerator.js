@@ -16,6 +16,60 @@ class LocationGenerator extends OpenaiClient {
     this.db = new Firebase().db;
   }
 
+  async awaitSeconds(seconds) {
+    return new Promise(resolve => {
+      setTimeout(() => {
+        resolve();
+      }, seconds * 1000);
+    });
+  }
+
+  /** retry function for get tickets from our provider */
+  async retryGetTikets(product){
+    let count = 0;
+    let result = '';
+    while ( count < 3 ) {
+      result = await this.getTickets(product);
+      if (result.statusCode === 429) {
+        await this.awaitSeconds(0.5);
+        count += 1;
+        continue;
+      }
+      return result;
+    }
+    return result;
+  }
+
+  async getTickets({name, latitude, longitude}){
+
+    const createAffiliateUrl = (baseUrl) => {
+      const separator = baseUrl.includes('?') ? '&' : '?';
+      const affiliateLink = `${baseUrl}${separator}partner=travelbot-174935`;
+      return affiliateLink;
+    }
+
+    try {
+      const a = await axios.get(`https://api.tiqets.com/v2/products?lat=${latitude}&lng=${longitude}&max_distance=1&sort=distance asc&query=${name}&require_venue=true`, {
+        headers: {
+          'Authorization': `Token ${apiKeyTiqets}`,
+          'Accept': 'application/json'
+        }
+      })
+      const products = a?.data?.products ?? [];
+      const filtredProducts = products?.
+        filter((product)=>product.venue.address && product.venue.postal_code)?.
+        map((product)=>{
+          return {
+            product_url: createAffiliateUrl(product?.product_url),
+            titile: product.title
+          }
+        })
+      return {isResolved: true, data: filtredProducts ?? []};
+    }catch(err){
+      return {isResolved: false, statusCode: err?.status};
+    }
+  }
+
   /** get image of the city */
   async getUrlImageCity({city,  country}){
     try{
