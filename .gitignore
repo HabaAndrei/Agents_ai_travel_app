@@ -4,6 +4,8 @@
 /images/*
 !.gitkeep
 
+test.js
+
 # macOS
 .DS_Store
 *.pem
