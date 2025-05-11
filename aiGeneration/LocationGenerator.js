@@ -7,6 +7,7 @@ const fs = require('fs');
 const sharp = require('sharp');
 
 const apiKeyGoogleMaps = EnvConfig.getInstance().get('API_KEY_GOOGLE_MAP');
+const apiKeyTiqets = EnvConfig.getInstance().get('TIQETS_API_TOKEN');
 
 class LocationGenerator extends OpenaiClient {
 
@@ -119,7 +120,7 @@ class LocationGenerator extends OpenaiClient {
   }
 
   /** This function retrieves location details from the Google Maps API */
-  async getLocationDetailsFromGoogleApi({place, aliasLocation, description, indexPlace, city, country}){
+  async getLocationDetailsFromGoogleApi({place, aliasLocation, description, indexPlace, city, country, buyTicket}){
     try{
 
       /** If the place already exists in the database (with the same name, country and city), I send the data from the database */
@@ -169,6 +170,15 @@ class LocationGenerator extends OpenaiClient {
         }
       }
 
+      /** get tickets */
+      let tickets = [];
+      if (buyTicket && geometry_location.latitude && geometry_location.longitude) {
+        const resultTickets = await this.retryGetTikets(
+          { latitude: geometry_location.latitude, longitude: geometry_location.longitude, name: place }
+        );
+        if ( resultTickets.isResolved ) tickets = resultTickets?.data;
+      }
+
       /** create the result object */
       const obData = {
         location: name,
@@ -180,7 +190,8 @@ class LocationGenerator extends OpenaiClient {
         arrayProgramPlace: arrayProgramPlace ? arrayProgramPlace : [],
         arrayWithLinkImages: arrayWithLinkImages ? arrayWithLinkImages : [],
         city: city,
-        country: country
+        country: country,
+        tickets: tickets
       }
 
       /** save the place in database */
@@ -348,7 +359,8 @@ class LocationGenerator extends OpenaiClient {
       const UniquePlacesSchema = z.object({
       	name: z.string().describe(`The name of the place in english. The name should be relevant. For example, if you are in Brașov, Romania, and choose Poiana Brașov, don't just say 'Poiana'; say 'Poiana Brașov,' the full name in ENGLISH.`),
         alias: z.string().describe("The name in the country's languge"),
-        description: z.string().describe('Only one word description e.g: road, mountain, lake, church, museum, restaurant, shop')
+        description: z.string().describe('Only one word description e.g: road, mountain, lake, church, museum, restaurant, shop'),
+        buyTicket: z.boolean().describe("If I have to buy a ticket to visit that location: if it's a mountain, that's false because I don't need to buy a ticket; but if it's a place with attractions that require a ticket, then it's true.")
       })
       JsonSchema = z.object({
       	response: z.object({
@@ -369,8 +381,8 @@ class LocationGenerator extends OpenaiClient {
 
       /** get details for each location */
       const arrayWithCalls = arWithNameAliasDescription.map((objectNameAlias, index)=>{
-        const {alias, description, name} = objectNameAlias;
-        return this.getLocationDetailsFromGoogleApi({place: name, aliasLocation: alias, description, indexPlace: index, city, country});
+        const {alias, description, name, buyTicket} = objectNameAlias;
+        return this.getLocationDetailsFromGoogleApi({place: name, aliasLocation: alias, description, indexPlace: index, city, country, buyTicket});
       })
       const dataFromGoogleCalls = await Promise.all(arrayWithCalls);
 
@@ -400,7 +412,7 @@ class LocationGenerator extends OpenaiClient {
       for(let details of dataFromGoogleCalls){
         if(!details.isResolved)continue;
         const {location, place_id, arrayProgramPlace, arrayWithLinkImages, address,
-          urlLocation, website, geometry_location} = details.data;
+          urlLocation, website, geometry_location, tickets} = details.data;
         const index_ = details.index;
         const dataTimeLocation = findVisitPackagesLocation(index_);
         const name = arWithNameAliasDescription?.[index_]?.name;
@@ -416,6 +428,7 @@ class LocationGenerator extends OpenaiClient {
             arrayWithLinkImages: arrayWithLinkImages || [],
             index: index_,
             dataTimeLocation: dataTimeLocation || {},
+            tickets: tickets || []
           }
         )
       }
