@@ -63,7 +63,8 @@
         "task": "Provide me with the location and time as shown in the example below, so that I can visit the location and make a decision based on the schedule.",
         "restrictions": [
           "Do not add any extra locations to the schedule.",
-          "Only use the provided location, and avoid modifying it."
+          "Only use the provided location, and avoid modifying it.",
+          "Do not schedule visits for early morning hours unless it's a place where the activity starts early (e.g., if I need to see a sunrise). I'm in vacation mode and don't want to wake up early unless the activity absolutely requires it."
         ]
       },
       "replaceSingle": [],
@@ -72,7 +73,8 @@
         "considerations": "The time I should arrive at the location will be estimated based on the time it takes to get there when it's open, the time I want to spend visiting, and the time lost in traffic during the journey.",
         "restrictions": [
           "Only use the provided list of locations, and avoid modifying them.",
-          "The order of locations in the schedule should be calculated efficiently, and the next location should always be the one closest to the current location."
+          "The order of locations in the schedule should be calculated efficiently, and the next location should always be the one closest to the current location.",
+          "Do not schedule visits for early morning hours unless it's a place where the activity starts early (e.g., if I need to see a sunrise). I'm in vacation mode and don't want to wake up early unless the activity absolutely requires it."
         ],
         "final_check": "At the end, please check to ensure that all the requirements have been met."
       },
