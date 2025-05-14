@@ -128,7 +128,7 @@ class LocationGenerator extends OpenaiClient {
     try{
       // get image buffer
       const data = await axios.get(
-        `https://places.googleapis.com/v1/${name}/media?key=${apiKeyGoogleMaps}&maxWidthPx=3000`,
+        `https://places.googleapis.com/v1/${name}/media?key=${apiKeyGoogleMaps}&maxWidthPx=900`,
         {responseType: "arraybuffer"}
       );
       // remove parts of url
@@ -138,12 +138,10 @@ class LocationGenerator extends OpenaiClient {
       // store the image localy
       // ( to access the image from server: server address + /images/ + url + .jpg )
       const path = `./images/${url}.jpg`;
-      // if the file exists send the url
-      if (fs.existsSync(path)) return {isResolved: true, url};
       // if the file doesn t exist, we store it compressed
-      await sharp(data.data)
-        .resize({ width: 800 })
-        .jpeg({ quality: 70 })
+      sharp(data.data)
+        // .resize({ width: 800 })
+        // .jpeg({ quality: 70 })
         .toFile(path);
       return {isResolved: true, url: url ? url : '' };
     }catch(err){
