@@ -351,13 +351,15 @@ class LocationGenerator extends OpenaiClient {
       console.log('Function called with count =>>> ', count);
       console.log(rejectionReasonForProximityVerification, ' <<<<< ========  Rejection reason ');
 
-      if (rejectionReasonForProximityVerification.length) {
-        // Add a specific prompt for rejection
-        systemPrompt += this.promptLoader.replace({
-          data: prompts.systemPrompt.contentRejectionReason,
-          changes: { "${rejectionReasonForProximityVerification}": rejectionReasonForProximityVerification }
-        });
-      }
+      // !!! if i want to verify locations i have to uncomment this prompt
+
+      // if (rejectionReasonForProximityVerification.length) {
+      //   // Add a specific prompt for rejection
+      //   systemPrompt += this.promptLoader.replace({
+      //     data: prompts.systemPrompt.contentRejectionReason,
+      //     changes: { "${rejectionReasonForProximityVerification}": rejectionReasonForProximityVerification }
+      //   });
+      // }
 
       // Generate locations
       const resultLocationsLlm = await this.retryLlmCallWithSchema({ systemPrompt, userPrompt, JsonSchema });
@@ -369,12 +371,15 @@ class LocationGenerator extends OpenaiClient {
       resultLocations = resultLocationsLlm.data;
 
       /** Verify the proximity of generated locations */
-      const resultVerification = await this.verifyProximitylocations(resultLocations, userPrompt);
+      // const resultVerification = await this.verifyProximitylocations(resultLocations, userPrompt);
 
       // If the locations meet the rules, exit the loop by setting 'isRespectingTheRules' to true
-      if (resultVerification?.isResolved && resultVerification?.data) isRespectingTheRules = true;
+      // if (resultVerification?.isResolved && resultVerification?.data) isRespectingTheRules = true;
 
-      rejectionReasonForProximityVerification += resultVerification?.reason;
+      // !!! this line of code has to be deleted if i want to verify locations !
+      isRespectingTheRules = true;
+
+      // rejectionReasonForProximityVerification += resultVerification?.reason;
       count += 1;
     }
 
