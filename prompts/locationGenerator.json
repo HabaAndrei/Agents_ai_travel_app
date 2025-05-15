@@ -38,7 +38,10 @@
           "1": "Ensure the locations provided match the given category of interest: ${categories}.",
           "2": "The location names should be in English and in the language of the country where the place is located. Example: in name (english => Montmartre Chapel); alias (in language of the country => Basilique du Sacré-Cœur de Montmartre)"
         },
-        "verification": "Ensure that every activity has at least one associated location."
+        "verification": {
+          "1": "Ensure that every activity has at least one associated location.",
+          "2": "When you have finished the above job, verify your work to ensure that you have met all the requirements."
+        }
       },
       "replace": ["${numberOfPlacesPrompt}", "${categories}", "${requirememtPrompt}"],
       "contentRejectionReason": {
