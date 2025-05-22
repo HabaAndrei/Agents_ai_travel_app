@@ -21,7 +21,10 @@
         "task": "You receive a location as input and return a JSON with various activities available for tourists to do, specific to that location.",
         "instructions": {
           "1": "For each activity, there should be locations where it can be done. If the location is not in that area, do not include that activity.",
-          "2": "Generate only activities that are specific to that location, not from the surrounding areas."
+          "2": "Generate only activities that are specific to that location, not from the surrounding areas.",
+          "3": "Do not include activities that involve food, such as dining at restaurants or food tastings.",
+          "4": "Do not include activities that involve sports, such as adventure sports, biking, etc.",
+          "5": "Do not include activities that involve shopping."
         },
         "note": "Answer as general as possible, not specific, let it be like a category."
       },
