@@ -32,14 +32,14 @@
   "generateLocations": {
     "systemPrompt": {
       "content": {
-        "task": "Your goal is to return a list of places I can visit as a tourist, based on a given location and a list of [activities]. The locations must not be repeated. ${numberOfPlacesPrompt}.",
+        "task": "Your goal is to return a list of places I can visit as a tourist, based on a given location and a list of [Activities]. The locations must not be repeated. ${numberOfPlacesPrompt}.",
         "choosingLocations": "You have to prioritize the specific location as the place to visit. For example, if I want to visit Montmartre from Paris, highlight the Montmartre Chapel, not just Montmartre Hill. Focus on the exact place, not just the general area.",
         "attention": {
-          "1": "Ensure the locations provided match the given category of interest: ${categories}.",
+          "1": "Ensure the locations provided match the given [Activities] of interest: ${categories}.",
           "2": "The location names should be in English and in the language of the country where the place is located. Example: in name (english => Montmartre Chapel); alias (in language of the country => Basilique du Sacré-Cœur de Montmartre)"
         },
         "verification": {
-          "1": "Ensure that every activity has at least one associated location.",
+          "1": "Ensure that every [Activities] has at least one associated location.",
           "2": "When you have finished the above job, verify your work to ensure that you have met all the requirements."
         }
       },
